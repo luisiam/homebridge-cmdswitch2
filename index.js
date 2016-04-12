@@ -159,7 +159,6 @@ cmdSwitchPlatform.prototype.addAccessory = function(name, on_cmd, off_cmd, state
 cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
   if (accessory) {
     var name = accessory.displayName;
-    this.log("Removing...");
     this.api.unregisterPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
     delete this.accessories[name];
   }
