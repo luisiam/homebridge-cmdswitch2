@@ -1,0 +1,22 @@
+{
+  "name": "homebridge-cmdswitch2",
+  "version": "0.1.0",
+  "description": "CMD plugin for HomeBridge: https://github.com/nfarina/homebridge",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/luisiam/homebridge-cmdswitch2.git"
+  },
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "author": "Luis Iam",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/luisiam/homebridge-cmdswitch2/issues"
+  },
+  "homepage": "https://github.com/luisiam/homebridge-cmdswitch2#readme",
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  }
+}
