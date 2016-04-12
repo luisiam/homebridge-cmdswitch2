@@ -1,4 +1,4 @@
-# homebridge-cmdswitch2 [![npm version](https://badge.fury.io/js/homebridge-cmdswitch.svg)](https://badge.fury.io/js/homebridge-cmdswitch)
+# homebridge-cmdswitch2 [![npm version](https://badge.fury.io/js/homebridge-cmdswitch2.svg)](https://badge.fury.io/js/homebridge-cmdswitch2)
 CMD Plugin for [HomeBridge](https://github.com/nfarina/homebridge) (API 2.0)
 
 Older version with API 1.0: [homebridge-cmdswitch](https://github.com/luisiam/homebridge-cmdswitch)
