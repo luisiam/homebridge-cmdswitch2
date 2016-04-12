@@ -34,8 +34,8 @@ cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
   accessory
     .getService(Service.Switch)
     .getCharacteristic(Characteristic.On)
-    .on('get', this.getPowerState.bind(this, accessory))
-    .on('set', this.setPowerState.bind(this, accessory));
+    .on('get', self.getPowerState.bind(this, accessory))
+    .on('set', self.setPowerState.bind(this, accessory));
 
   accessory.on('identify', function(paired, callback) {
     self.log(name + "Identify requested!");
@@ -60,7 +60,7 @@ cmdSwitchPlatform.prototype.getPowerState = function(accessory, callback) {
       callback(null, data.state);
     });
   } else {
-    this.log(name + "Current state: " + (data.state ? "On." : "Off."));
+    self.log(name + "Current state: " + (data.state ? "On." : "Off."));
     callback(null, data.state);
   }
 }
@@ -101,7 +101,7 @@ cmdSwitchPlatform.prototype.setPowerState = function(accessory, state, callback)
       callback();
     }, 2000);
   } else {
-    this.log(name + "Turned " + (state ? "on" : "off"));
+    self.log(name + "Turned " + (state ? "on" : "off"));
     data.state = state;
     callback();
   }
@@ -147,13 +147,13 @@ cmdSwitchPlatform.prototype.addAccessory = function(name, on_cmd, off_cmd, state
     callback();
   });
   
-  if (this.accessories[name]) {
-    this.api.updatePlatformAccessories([newAccessory]);
+  if (self.accessories[name]) {
+    self.api.updatePlatformAccessories([newAccessory]);
   } else {
-    this.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
+    self.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
   }
 
-  this.accessories[name] = newAccessory;
+  self.accessories[name] = newAccessory;
 }
 
 cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
@@ -237,7 +237,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
           callback(respDict);
         } else {
           var self = this;
-          var switches = Object.keys(this.accessories).map(function(k) {return self.accessories[k]});
+          var switches = Object.keys(self.accessories).map(function(k) {return self.accessories[k]});
           var names = switches.map(function(k) {return k.displayName});
 
           if (names.length > 0) {
@@ -349,7 +349,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
       case 5:
         var self = this;
         delete context.step;
-        var newConfig = this.config;
+        var newConfig = self.config;
         var newSwitches = Object.keys(this.accessories).map(function(k) {
           var accessory = self.accessories[k];
           var data = {
