@@ -17,6 +17,6 @@
   "homepage": "https://github.com/luisiam/homebridge-cmdswitch2#readme",
   "engines": {
     "node": ">=0.12.0",
-    "homebridge": ">=0.2.0"
+    "homebridge": ">=0.3.0"
   }
 }
