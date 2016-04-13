@@ -26,31 +26,95 @@ function cmdSwitchPlatform(log, config, api) {
   }
 }
 
+// Method to configure accessory from cache
 cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
   var self = this;
-  var name = "[" + accessory.displayName + "] ";
 
   accessory.reachable = true
-  accessory
-    .getService(Service.Switch)
-    .getCharacteristic(Characteristic.On)
-    .on('get', self.getPowerState.bind(this, accessory))
-    .on('set', self.setPowerState.bind(this, accessory));
 
-  accessory.on('identify', function(paired, callback) {
-    self.log(name + "Identify requested!");
-    callback();
-  });
+  self.setService(accessory);
 
-  var accessoryName = accessory.displayName;
+  var accessoryName = accessory.context.name;
   self.accessories[accessoryName] = accessory;
 }
 
-// Method to determine current state
-cmdSwitchPlatform.prototype.getPowerState = function(accessory, callback) {
+// Method to configure new accesory from config.json
+cmdSwitchPlatform.prototype.didFinishLaunching = function() {
   var self = this;
-  var data = accessory.context;
-  var name = "[" + accessory.displayName + "] ";
+
+  for (var i in self.switches) {
+    var data = self.switches[i];
+    if (!self.accessories[data.name]){
+      self.addAccessory(data);
+    }
+  }
+}
+
+// Method to configure new accessory from HomeKit
+cmdSwitchPlatform.prototype.addAccessory = function(data) {
+  var self = this;
+  var uuid = UUIDGen.generate(data.name);
+
+  var newAccessory = new Accessory(data.name, uuid, 8);
+  newAccessory.context.name = data.name;
+  newAccessory.context.on_cmd = data.on_cmd;
+  newAccessory.context.off_cmd = data.off_cmd;
+  newAccessory.context.state_cmd = data.state_cmd;
+  newAccessory.context.state = false;
+
+  newAccessory.addService(Service.Switch, data.name);
+
+  var info = newAccessory.getService(Service.AccessoryInformation);
+  if (data.manufacturer) {
+    newAccessory.context.manufacturer = data.manufacturer;
+    info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer);
+  }
+  if (data.model) {
+    newAccessory.context.model = data.model;
+    info.setCharacteristic(Characteristic.Model, data.model);
+  }
+  if (data.serial) {
+    newAccessory.context.serial = data.serial;
+    info.setCharacteristic(Characteristic.SerialNumber, data.serial);
+  }
+
+  self.setService(newAccessory);
+  
+  if (self.accessories[data.name]) {
+    self.api.updatePlatformAccessories([newAccessory]);
+  } else {
+    self.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
+  }
+
+  self.accessories[data.name] = newAccessory;
+}
+
+// Method to remove an accessory from HomeKit
+cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
+  if (accessory) {
+    var name = accessory.context.name;
+    this.api.unregisterPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
+    delete this.accessories[name];
+  }
+}
+
+// Method to bind the switch and functions
+cmdSwitchPlatform.prototype.setService = function(accessory) {
+  var self = this;
+
+  accessory
+    .getService(Service.Switch)
+    .getCharacteristic(Characteristic.On)
+    .on('get', self.getPowerState.bind(this, accessory.context))
+    .on('set', self.setPowerState.bind(this, accessory.context));
+
+  accessory.on('identify', self.identify.bind(this, accessory.context));
+}
+
+// Method to determine current state
+cmdSwitchPlatform.prototype.getPowerState = function(data, callback) {
+  var self = this;
+  var name = "[" + data.name + "] ";
 
   // Execute command to detect state
   if (data.state_cmd) {
@@ -66,10 +130,9 @@ cmdSwitchPlatform.prototype.getPowerState = function(accessory, callback) {
 }
 
 // Method to set state
-cmdSwitchPlatform.prototype.setPowerState = function(accessory, state, callback) {
+cmdSwitchPlatform.prototype.setPowerState = function(data, state, callback) {
   var self = this;
-  var data = accessory.context;
-  var name = "[" + accessory.displayName + "] ";
+  var name = "[" + data.name + "] ";
 
   var cmd = state ? data.on_cmd : data.off_cmd;
   var tout = null;
@@ -79,7 +142,7 @@ cmdSwitchPlatform.prototype.setPowerState = function(accessory, state, callback)
     exec(cmd, function(error, stdout, stderr) {
 
       // Error detection
-      if (error && (state != datat.state)) {
+      if (error && (state != data.state)) {
         self.log(name + stderr);
         self.log(name + "Failed to turn " + (state ? "on!" : "off!"));
       } else {
@@ -97,7 +160,7 @@ cmdSwitchPlatform.prototype.setPowerState = function(accessory, state, callback)
     // Allow 2s to set state but otherwise assumes success
     tout = setTimeout(function() {
       tout = null;
-      self.log(name + "Turning " + (state ? "on " : "off ") + " took too long, assuming success." );
+      self.log(name + "Turning " + (state ? "on" : "off") + " took too long, assuming success." );
       callback();
     }, 2000);
   } else {
@@ -107,63 +170,16 @@ cmdSwitchPlatform.prototype.setPowerState = function(accessory, state, callback)
   }
 }
 
-cmdSwitchPlatform.prototype.didFinishLaunching = function() {
+// Method to handle identify request
+cmdSwitchPlatform.prototype.identify = function(data, paired, callback) {
   var self = this;
+  var name = "[" + data.name + "] ";
 
-  for (var i in self.switches) {
-    var data = self.switches[i];
-    self.addAccessory(data.name, data.on_cmd, data.off_cmd, data.state_cmd, data.manufacturer, data.model, data.serial);
-  }
+  self.log(name + "Identify requested!");
+  callback();
 }
 
-cmdSwitchPlatform.prototype.addAccessory = function(name, on_cmd, off_cmd, state_cmd, manufacturer, model, serial) {
-  var self = this;
-  var uuid = UUIDGen.generate(name);
-
-  var newAccessory = new Accessory(name, uuid, 8);
-  newAccessory.context.on_cmd = on_cmd;
-  newAccessory.context.off_cmd = off_cmd;
-  newAccessory.context.state_cmd = state_cmd;
-  newAccessory.context.state = false;
-
-  newAccessory.addService(Service.Switch, name);
-
-  var info = newAccessory.getService(Service.AccessoryInformation);
-  if (manufacturer) {
-    newAccessory.context.manufacturer = manufacturer;
-    info.setCharacteristic(Characteristic.Manufacturer, manufacturer);
-  }
-  if (model) {
-    newAccessory.context.model = model;
-    info.setCharacteristic(Characteristic.Model, model);
-  }
-  if (serial) {
-    newAccessory.context.serial = serial;
-    info.setCharacteristic(Characteristic.SerialNumber, serial);
-  }
-
-  newAccessory.on('identify', function(paired, callback) {
-    self.log("[" + name + "] Identify requested!");
-    callback();
-  });
-  
-  if (self.accessories[name]) {
-    self.api.updatePlatformAccessories([newAccessory]);
-  } else {
-    self.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
-  }
-
-  self.accessories[name] = newAccessory;
-}
-
-cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
-  if (accessory) {
-    var name = accessory.displayName;
-    this.api.unregisterPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
-    delete this.accessories[name];
-  }
-}
-
+// Method to handle 
 cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, request, callback) {
   if (request && request.type === "Terminate") {
     return;
@@ -271,24 +287,26 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
         break;
       case 3:
         var userInputs = request.response.inputs;
+        var newSwitch = {};
+
         if (context.accessory) {
           var accessory = context.accessory;
-          var name = accessory.displayName;
-          var on_cmd = userInputs.on_cmd || accessory.context.on_cmd;
-          var off_cmd = userInputs.off_cmd || accessory.context.off_cmd;
-          var state_cmd = userInputs.state_cmd || accessory.context.state_cmd;
+          newSwitch["name"] = accessory.context.name;
+          newSwitch["on_cmd"] = userInputs.on_cmd || accessory.context.on_cmd;
+          newSwitch["off_cmd"] = userInputs.off_cmd || accessory.context.off_cmd;
+          newSwitch["state_cmd"] = userInputs.state_cmd || accessory.context.state_cmd;
         } else {
-          var name = userInputs.name;
-          var on_cmd = userInputs.on_cmd;
-          var off_cmd = userInputs.off_cmd;
-          var state_cmd = userInputs.state_cmd;
-          var manufacturer = userInputs.manufacturer;
-          var model = userInputs.model;
-          var serial = userInputs.serial;
+          newSwitch["name"] = userInputs.name;
+          newSwitch["on_cmd"] = userInputs.on_cmd;
+          newSwitch["off_cmd"] = userInputs.off_cmd;
+          newSwitch["state_cmd"] = userInputs.state_cmd;
+          newSwitch["manufacturer"] = userInputs.manufacturer;
+          newSwitch["model"] = userInputs.model;
+          newSwitch["serial"] = userInputs.serial;
         }
 
-        if (name) {
-          this.addAccessory(name, on_cmd, off_cmd, state_cmd, manufacturer, model, serial);
+        if (newSwitch["name"]) {
+          this.addAccessory(newSwitch);
           var respDict = {
             "type": "Interface",
             "interface": "instruction",
@@ -350,10 +368,10 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
         var self = this;
         delete context.step;
         var newConfig = self.config;
-        var newSwitches = Object.keys(this.accessories).map(function(k) {
+        var newSwitches = Object.keys(self.accessories).map(function(k) {
           var accessory = self.accessories[k];
           var data = {
-            'name': accessory.displayName,
+            'name': accessory.context.name,
             'on_cmd': accessory.context.on_cmd,
             'off_cmd': accessory.context.off_cmd,
             'state_cmd': accessory.context.state_cmd,
