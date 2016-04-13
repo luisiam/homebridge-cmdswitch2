@@ -3,12 +3,18 @@ CMD Plugin for [HomeBridge](https://github.com/nfarina/homebridge) (API 2.0)
 
 Older version with API 1.0: [homebridge-cmdswitch](https://github.com/luisiam/homebridge-cmdswitch)
 
-Basics of how this plugin works:<br>
-1. Execute `on_cmd` command when the switch is turned to ON.<br>
-2. Execute `off_cmd` command when the switch is turned to OFF.<br>
-3. Execute `state_cmd` when checking the state.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;a. If there's no error, return ON.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;b. If there's error, return OFF.<br>
+### What this plugin does
+This plugin allows you to run Command Line Interface (CLI) commands via HomeKit. This means you can run a simple commands such as `ping`, `shutdown`, or `wakeonlan` just by telling Siri to do so. An example usage for this plugin would be to turn on your PS4 or HTPC, check if it’s on, and even shut it down when finished.
+
+### How this plugin works
+1. `on_cmd`: This is the command issued when the switch is turned ON.
+2. `off_cmd`: This is the command issued when the switch is turned OFF.
+3. `state_cmd`: This is the command issued when HomeBridge checks the state of the switch.
+  1. If there is no error, HomeBridge is notified that the switch is ON.
+  2. If there is an error, HomeBridge is notified that the switch is OFF.
+
+### Things to know about this plugin
+This plugin can only run CLI commands the same as you typing them yourself. In order to test if your `on_cmd`, `off_cmd`, or `state_cmd` are valid commands you need to run them from your CLI. Please keep in mind you will want to run these commands from the same user that runs (or owns) the HomeBridge service if different than your root user.
 
 # Installation
 1. Install homebridge using `npm install -g homebridge`.
@@ -23,7 +29,7 @@ Edit your `config.json` accordingly. Configuration sample:
 }]
 ```
 
-# Advanced Configuration (Optional)
+### Advanced Configuration (Optional)
 This step is not required. HomeBridge with API 2.0 can handle configurations in the HomeKit app.
  ```
 "platforms": [{
