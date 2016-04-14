@@ -38,7 +38,7 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
         "name" : "HTPC",
         "on_cmd": "wakeonlan XX:XX:XX:XX:XX:XX",
         "off_cmd": "net rpc shutdown -I XXX.XXX.XXX.XXX -U user%password",
-        "state_cmd": "ping -c 2 -W 1 XXX.XXX.XXX.XXX | grep -i '2 received'",
+        "state_cmd": "ping -c 2 -W 1 XXX.XXX.XXX.XXX | grep -i '2 received'"
     }, {
         "name" : "Playstation 4",
         "on_cmd": "ps4-waker",
