@@ -26,7 +26,7 @@ function cmdSwitchPlatform(log, config, api) {
   }
 }
 
-// Method to configure accessory from cache
+// Method to restore accessories from cache
 cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
   var self = this;
 
@@ -38,7 +38,7 @@ cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
   self.accessories[accessoryName] = accessory;
 }
 
-// Method to configure new accesory from config.json
+// Method to setup new accesories from config.json
 cmdSwitchPlatform.prototype.didFinishLaunching = function() {
   var self = this;
 
@@ -50,20 +50,25 @@ cmdSwitchPlatform.prototype.didFinishLaunching = function() {
   }
 }
 
-// Method to configure new accessory from HomeKit
+// Method to setup new accessories added from HomeKit app
 cmdSwitchPlatform.prototype.addAccessory = function(data) {
   var self = this;
   var uuid = UUIDGen.generate(data.name);
 
+  // Setup accessory as SWITCH (8) category.
   var newAccessory = new Accessory(data.name, uuid, 8);
+
+  // Store and initialize variables into context
   newAccessory.context.name = data.name;
   newAccessory.context.on_cmd = data.on_cmd;
   newAccessory.context.off_cmd = data.off_cmd;
   newAccessory.context.state_cmd = data.state_cmd;
   newAccessory.context.state = false;
 
+  // Setup HomeKit switch service
   newAccessory.addService(Service.Switch, data.name);
 
+  // Setup HomeKit accessory information
   var info = newAccessory.getService(Service.AccessoryInformation);
   if (data.manufacturer) {
     info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer);
@@ -75,8 +80,10 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     info.setCharacteristic(Characteristic.SerialNumber, data.serial);
   }
 
+  // Setup listeners for different switch event
   self.setService(newAccessory);
-  
+
+  // Register or update accessory in HomeKit
   if (self.accessories[data.name]) {
     self.api.updatePlatformAccessories([newAccessory]);
   } else {
@@ -86,7 +93,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
   self.accessories[data.name] = newAccessory;
 }
 
-// Method to remove an accessory from HomeKit
+// Method to remove accessories from HomeKit
 cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
   if (accessory) {
     var name = accessory.context.name;
@@ -95,7 +102,7 @@ cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
   }
 }
 
-// Method to bind the switch and functions
+// Method to setup listeners for different events
 cmdSwitchPlatform.prototype.setService = function(accessory) {
   var self = this;
 
@@ -137,7 +144,6 @@ cmdSwitchPlatform.prototype.setPowerState = function(data, state, callback) {
   // Execute command to set state
   if (cmd) {
     exec(cmd, function(error, stdout, stderr) {
-
       // Error detection
       if (error && (state != data.state)) {
         self.log(name + stderr);
@@ -176,12 +182,13 @@ cmdSwitchPlatform.prototype.identify = function(data, paired, callback) {
   callback();
 }
 
-// Method to handle 
+// Method to handle plugin configuration in HomeKit app
 cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, request, callback) {
   if (request && request.type === "Terminate") {
     return;
   }
 
+  // Instruction
   if (!context.step) {
     var instructionResp = {
       "type": "Interface",
@@ -196,6 +203,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
   } else {
     switch (context.step) {
       case 1:
+        // Operation choices
         var respDict = {
           "type": "Interface",
           "interface": "list",
@@ -206,12 +214,14 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
             "Remove Existing Switch"
           ]
         }
+
         context.step = 2;
         callback(respDict);
         break;
       case 2:
         var selection = request.response.selections[0];
         if (selection === 0) {
+          // Info for new accessory
           var respDict = {
             "type": "Interface",
             "interface": "input",
@@ -246,6 +256,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
               "placeholder": "Default-SerialNumber"
             }]
           };
+
           context.step = 3;
           callback(respDict);
         } else {
@@ -254,6 +265,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
           var names = switches.map(function(k) {return k.displayName});
 
           if (names.length > 0) {
+            // Select existing accessory for modification or removal
             if (selection === 1) {
               var title = "Witch switch do you want to modify?";
               context.modify = 1;
@@ -267,6 +279,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
               "title": title,
               "items": names
             };
+
             context.switches = switches;
             context.step = 4;
           } else {
@@ -277,15 +290,18 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
               "detail": "No switch is configured.",
               "showNextButton": true
             };
+
             context.step = 1;
           }
           callback(respDict);
         }
         break;
       case 3:
+        
         var userInputs = request.response.inputs;
         var newSwitch = {};
 
+        // Setup input for addAccessory
         if (context.accessory) {
           var accessory = context.accessory;
           newSwitch["name"] = accessory.context.name;
@@ -303,6 +319,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
         }
 
         if (newSwitch["name"]) {
+          // Register or update accessory in HomeKit
           this.addAccessory(newSwitch);
           var respDict = {
             "type": "Interface",
@@ -311,8 +328,10 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
             "detail": "The new switch is now updated.",
             "showNextButton": true
           };
-          context.step = 5;
+ 
+         context.step = 5;
         } else {
+          // Error if required info is missing
           var respDict = {
             "type": "Interface",
             "interface": "instruction",
@@ -320,6 +339,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
             "detail": "Name of the switch is missing.",
             "showNextButton": true
           };
+
           context.step = 1;
         }
         callback(respDict);
@@ -328,6 +348,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
         var selection = request.response.selections[0];
         var accessory = context.switches[selection];
         if (context.modify) {
+          // Modify info of selected accessory
           var respDict = {
             "type": "Interface",
             "interface": "input",
@@ -346,9 +367,11 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
               "placeholder": accessory.context.state_cmd
             }]
           };
+
           context.accessory = accessory;
           context.step = 3;
         } else {
+          // Remove selected accessory from HomeKit
           this.removeAccessory(accessory);
           var respDict = {
             "type": "Interface",
@@ -357,11 +380,13 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
             "detail": "The switch is now removed.",
             "showNextButton": true
           };
+
           context.step = 5;
         }
         callback(respDict);
         break;
       case 5:
+        // Update config.json accordingly
         var self = this;
         delete context.step;
         var newConfig = self.config;
@@ -375,8 +400,8 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
           };
           return data;
         });
-        newConfig.switches = newSwitches;
 
+        newConfig.switches = newSwitches;
         callback(null, "platform", true, newConfig);
         break;
     }
