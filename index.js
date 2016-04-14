@@ -328,8 +328,8 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
             "detail": "The new switch is now updated.",
             "showNextButton": true
           };
- 
-         context.step = 5;
+
+          context.step = 5;
         } else {
           // Error if required info is missing
           var respDict = {
