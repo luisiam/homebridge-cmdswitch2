@@ -66,15 +66,12 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
 
   var info = newAccessory.getService(Service.AccessoryInformation);
   if (data.manufacturer) {
-    newAccessory.context.manufacturer = data.manufacturer;
     info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer);
   }
   if (data.model) {
-    newAccessory.context.model = data.model;
     info.setCharacteristic(Characteristic.Model, data.model);
   }
   if (data.serial) {
-    newAccessory.context.serial = data.serial;
     info.setCharacteristic(Characteristic.SerialNumber, data.serial);
   }
 
@@ -374,10 +371,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
             'name': accessory.context.name,
             'on_cmd': accessory.context.on_cmd,
             'off_cmd': accessory.context.off_cmd,
-            'state_cmd': accessory.context.state_cmd,
-            'manufacturer': accessory.context.manufacturer,
-            'model': accessory.context.model,
-            'serial': accessory.context.serial
+            'state_cmd': accessory.context.state_cmd
           };
           return data;
         });
