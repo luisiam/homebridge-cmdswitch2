@@ -32,7 +32,7 @@ cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
 
   accessory.reachable = true
 
-  self.setService(accessory);
+  accessory = self.setService(accessory);
 
   var accessoryName = accessory.context.name;
   self.accessories[accessoryName] = accessory;
@@ -81,7 +81,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
   }
 
   // Setup listeners for different switch event
-  self.setService(newAccessory);
+  newAccessory = self.setService(newAccessory);
 
   // Register or update accessory in HomeKit
   if (self.accessories[data.name]) {
@@ -113,6 +113,8 @@ cmdSwitchPlatform.prototype.setService = function(accessory) {
     .on('set', self.setPowerState.bind(this, accessory.context));
 
   accessory.on('identify', self.identify.bind(this, accessory.context));
+
+  return accessory;
 }
 
 // Method to determine current state
@@ -297,28 +299,27 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
         }
         break;
       case 3:
-        
         var userInputs = request.response.inputs;
         var newSwitch = {};
 
         // Setup input for addAccessory
-        if (context.accessory) {
-          var accessory = context.accessory;
-          newSwitch["name"] = accessory.context.name;
-          newSwitch["on_cmd"] = userInputs.on_cmd || accessory.context.on_cmd;
-          newSwitch["off_cmd"] = userInputs.off_cmd || accessory.context.off_cmd;
-          newSwitch["state_cmd"] = userInputs.state_cmd || accessory.context.state_cmd;
+        if (context.selected) {
+          var accessory = this.accessories[context.selected];
+          newSwitch.name = context.selected;
+          newSwitch.on_cmd = userInputs.on_cmd || accessory.context.on_cmd;
+          newSwitch.off_cmd = userInputs.off_cmd || accessory.context.off_cmd;
+          newSwitch.state_cmd = userInputs.state_cmd || accessory.context.state_cmd;
         } else {
-          newSwitch["name"] = userInputs.name;
-          newSwitch["on_cmd"] = userInputs.on_cmd;
-          newSwitch["off_cmd"] = userInputs.off_cmd;
-          newSwitch["state_cmd"] = userInputs.state_cmd;
-          newSwitch["manufacturer"] = userInputs.manufacturer;
-          newSwitch["model"] = userInputs.model;
-          newSwitch["serial"] = userInputs.serial;
+          newSwitch.name = userInputs.name;
+          newSwitch.on_cmd = userInputs.on_cmd;
+          newSwitch.off_cmd = userInputs.off_cmd;
+          newSwitch.state_cmd = userInputs.state_cmd;
+          newSwitch.manufacturer = userInputs.manufacturer.toString();
+          newSwitch.model = userInputs.model.toString();
+          newSwitch.serial = userInputs.serial.toString();
         }
 
-        if (newSwitch["name"]) {
+        if (newSwitch.name) {
           // Register or update accessory in HomeKit
           this.addAccessory(newSwitch);
           var respDict = {
@@ -352,23 +353,23 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
           var respDict = {
             "type": "Interface",
             "interface": "input",
-            "title": accessory.displayName,
+            "title": accessory.displayName.toString(),
             "items": [{
               "id": "on_cmd",
               "title": "CMD to Turn On",
-              "placeholder": accessory.context.on_cmd
+              "placeholder": "Leave blank if unchanged"
             }, {
               "id": "off_cmd",
               "title": "CMD to Turn Off",
-              "placeholder": accessory.context.off_cmd
+              "placeholder": "Leave blank if unchanged"
             }, {
               "id": "state_cmd",
               "title": "CMD to Check ON State",
-              "placeholder": accessory.context.state_cmd
+              "placeholder": "Leave blank if unchanged"
             }]
           };
 
-          context.accessory = accessory;
+          context.selected = accessory.context.name;
           context.step = 3;
         } else {
           // Remove selected accessory from HomeKit
