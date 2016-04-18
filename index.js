@@ -53,43 +53,53 @@ cmdSwitchPlatform.prototype.didFinishLaunching = function() {
 // Method to setup new accessories added from HomeKit app
 cmdSwitchPlatform.prototype.addAccessory = function(data) {
   var self = this;
-  var uuid = UUIDGen.generate(data.name);
 
-  // Setup accessory as SWITCH (8) category.
-  var newAccessory = new Accessory(data.name, uuid, 8);
+  if (!self.accessories[data.name]) {
+    var uuid = UUIDGen.generate(data.name);
 
-  // Store and initialize variables into context
-  newAccessory.context.name = data.name;
-  newAccessory.context.on_cmd = data.on_cmd;
-  newAccessory.context.off_cmd = data.off_cmd;
-  newAccessory.context.state_cmd = data.state_cmd;
-  newAccessory.context.state = false;
+    // Setup accessory as SWITCH (8) category.
+    var newAccessory = new Accessory(data.name, uuid, 8);
 
-  // Setup HomeKit switch service
-  newAccessory.addService(Service.Switch, data.name);
+    // Store and initialize variables into context
+    newAccessory.context.name = data.name;
+    newAccessory.context.on_cmd = data.on_cmd;
+    newAccessory.context.off_cmd = data.off_cmd;
+    newAccessory.context.state_cmd = data.state_cmd;
+    newAccessory.context.state = false;
 
-  // Setup HomeKit accessory information
-  var info = newAccessory.getService(Service.AccessoryInformation);
-  if (data.manufacturer) {
-    info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer);
-  }
-  if (data.model) {
-    info.setCharacteristic(Characteristic.Model, data.model);
-  }
-  if (data.serial) {
-    info.setCharacteristic(Characteristic.SerialNumber, data.serial);
-  }
+    // Setup HomeKit switch service
+    newAccessory.addService(Service.Switch, data.name);
 
-  // Setup listeners for different switch event
-  newAccessory = self.setService(newAccessory);
+    // Setup HomeKit accessory information
+    var info = newAccessory.getService(Service.AccessoryInformation);
+    if (data.manufacturer) {
+      info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer);
+    }
+    if (data.model) {
+      info.setCharacteristic(Characteristic.Model, data.model);
+    }
+    if (data.serial) {
+      info.setCharacteristic(Characteristic.SerialNumber, data.serial);
+    }
 
-  // Register or update accessory in HomeKit
-  if (self.accessories[data.name]) {
-    self.api.updatePlatformAccessories([newAccessory]);
-  } else {
+    // Setup listeners for different switch events
+    newAccessory = self.setService(newAccessory);
+
+    // Register accessory in HomeKit
     self.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
+  } else {
+    var newAccessory = self.accessories[data.name];
+
+    // Update variables in context
+    newAccessory.context.on_cmd = data.on_cmd;
+    newAccessory.context.off_cmd = data.off_cmd;
+    newAccessory.context.state_cmd = data.state_cmd;
+
+    // Update accessory in HomeKit
+    self.api.updatePlatformAccessories([newAccessory]);
   }
 
+  // Store accessory in cache
   self.accessories[data.name] = newAccessory;
 }
 
