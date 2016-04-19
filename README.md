@@ -55,14 +55,13 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 ```
 
 
-| Fields        | Description                                       | Required |
-|---------------|---------------------------------------------------|----------|
-| platform      | Must always be `cmdSwitch2`.                      | Yes      |
-| name          | The name of your device.                          | Yes      |
-| on_cmd        | The command to turn on your device.               | No       |
-| off_cmd       | The command to turn off your device.              | No       |
-| state_cmd     | The command to detect an ON state of your device. | No       |
-| manufacturer* | The manufacturer of your device.                  | No       |
-| model*        | The model of your device.                         | No       |
-| serial*       | The serial number of your device.                 | No       |
-*&nbsp;Changes in `manufacturer`, `model` and `serial` will be ignored after initial setup.
+| Fields       | Description                                       | Required |
+|--------------|---------------------------------------------------|----------|
+| platform     | Must always be `cmdSwitch2`.                      | Yes      |
+| name         | The name of your device.                          | Yes      |
+| on_cmd       | The command to turn on your device.               | No       |
+| off_cmd      | The command to turn off your device.              | No       |
+| state_cmd    | The command to detect an ON state of your device. | No       |
+| manufacturer | The manufacturer of your device.                  | No       |
+| model        | The model of your device.                         | No       |
+| serial       | The serial number of your device.                 | No       |
