@@ -38,19 +38,17 @@ cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
   self.accessories[accessoryName] = accessory;
 }
 
-// Method to setup new accesories from config.json
+// Method to setup accesories from config.json
 cmdSwitchPlatform.prototype.didFinishLaunching = function() {
   var self = this;
 
   for (var i in self.switches) {
     var data = self.switches[i];
-    if (!self.accessories[data.name]){
-      self.addAccessory(data);
-    }
+    self.addAccessory(data);
   }
 }
 
-// Method to setup new accessories added from HomeKit app
+// Method to add and update HomeKit accessories
 cmdSwitchPlatform.prototype.addAccessory = function(data) {
   var self = this;
 
@@ -73,13 +71,16 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     // Setup HomeKit accessory information
     var info = newAccessory.getService(Service.AccessoryInformation);
     if (data.manufacturer) {
-      info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer);
+      newAccessory.context.manufacturer = data.manufacturer.toString();
+      info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer.toString());
     }
     if (data.model) {
-      info.setCharacteristic(Characteristic.Model, data.model);
+      newAccessory.context.model = data.model.toString();
+      info.setCharacteristic(Characteristic.Model, data.model.toString());
     }
     if (data.serial) {
-      info.setCharacteristic(Characteristic.SerialNumber, data.serial);
+      newAccessory.context.serial = data.serial.toString();
+      info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
     }
 
     // Setup listeners for different switch events
@@ -94,6 +95,21 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.on_cmd = data.on_cmd;
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
+
+    // Update HomeKit accessory information
+    var info = newAccessory.getService(Service.AccessoryInformation);
+    if (data.manufacturer) {
+      newAccessory.context.manufacturer = data.manufacturer.toString();
+      info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer.toString());
+    }
+    if (data.model) {
+      newAccessory.context.model = data.model.toString();
+      info.setCharacteristic(Characteristic.Model, data.model.toString());
+    }
+    if (data.serial) {
+      newAccessory.context.serial = data.serial.toString();
+      info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
+    }
 
     // Update accessory in HomeKit
     self.api.updatePlatformAccessories([newAccessory]);
@@ -319,14 +335,17 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
           newSwitch.on_cmd = userInputs.on_cmd || accessory.context.on_cmd;
           newSwitch.off_cmd = userInputs.off_cmd || accessory.context.off_cmd;
           newSwitch.state_cmd = userInputs.state_cmd || accessory.context.state_cmd;
+          newSwitch.manufacturer = userInputs.manufacturer;
+          newSwitch.model = userInputs.model;
+          newSwitch.serial = userInputs.serial;
         } else {
           newSwitch.name = userInputs.name;
           newSwitch.on_cmd = userInputs.on_cmd;
           newSwitch.off_cmd = userInputs.off_cmd;
           newSwitch.state_cmd = userInputs.state_cmd;
-          newSwitch.manufacturer = userInputs.manufacturer.toString();
-          newSwitch.model = userInputs.model.toString();
-          newSwitch.serial = userInputs.serial.toString();
+          newSwitch.manufacturer = userInputs.manufacturer;
+          newSwitch.model = userInputs.model;
+          newSwitch.serial = userInputs.serial;
         }
 
         if (newSwitch.name) {
@@ -376,6 +395,18 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
               "id": "state_cmd",
               "title": "CMD to Check ON State",
               "placeholder": "Leave blank if unchanged"
+            }, {
+              "id": "manufacturer",
+              "title": "Manufacturer",
+              "placeholder": "Leave blank if unchanged"
+            }, {
+              "id": "model",
+              "title": "Model",
+              "placeholder": "Leave blank if unchanged"
+            }, {
+              "id": "serial",
+              "title": "Serial",
+              "placeholder": "Leave blank if unchanged"
             }]
           };
 
@@ -407,7 +438,10 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function(context, requ
             'name': accessory.context.name,
             'on_cmd': accessory.context.on_cmd,
             'off_cmd': accessory.context.off_cmd,
-            'state_cmd': accessory.context.state_cmd
+            'state_cmd': accessory.context.state_cmd,
+            'manufacturer': accessory.context.manufacturer,
+            'model': accessory.context.model,
+            'serial': accessory.context.serial
           };
           return data;
         });
