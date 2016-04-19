@@ -69,19 +69,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.addService(Service.Switch, data.name);
 
     // Setup HomeKit accessory information
-    var info = newAccessory.getService(Service.AccessoryInformation);
-    if (data.manufacturer) {
-      newAccessory.context.manufacturer = data.manufacturer.toString();
-      info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer.toString());
-    }
-    if (data.model) {
-      newAccessory.context.model = data.model.toString();
-      info.setCharacteristic(Characteristic.Model, data.model.toString());
-    }
-    if (data.serial) {
-      newAccessory.context.serial = data.serial.toString();
-      info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
-    }
+    newAccessory = self.setAccessoryInfo(newAccessory, data);
 
     // Setup listeners for different switch events
     newAccessory = self.setService(newAccessory);
@@ -97,19 +85,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.state_cmd = data.state_cmd;
 
     // Update HomeKit accessory information
-    var info = newAccessory.getService(Service.AccessoryInformation);
-    if (data.manufacturer) {
-      newAccessory.context.manufacturer = data.manufacturer.toString();
-      info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer.toString());
-    }
-    if (data.model) {
-      newAccessory.context.model = data.model.toString();
-      info.setCharacteristic(Characteristic.Model, data.model.toString());
-    }
-    if (data.serial) {
-      newAccessory.context.serial = data.serial.toString();
-      info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
-    }
+    newAccessory = self.setAccessoryInfo(newAccessory, data);
 
     // Update accessory in HomeKit
     self.api.updatePlatformAccessories([newAccessory]);
@@ -139,6 +115,28 @@ cmdSwitchPlatform.prototype.setService = function(accessory) {
     .on('set', self.setPowerState.bind(this, accessory.context));
 
   accessory.on('identify', self.identify.bind(this, accessory.context));
+
+  return accessory;
+}
+
+// Method to setup HomeKit accessory information
+cmdSwitchPlatform.prototype.setAccessoryInfo = function(accessory, data) {
+  var info = accessory.getService(Service.AccessoryInformation);
+
+  if (data.manufacturer) {
+    accessory.context.manufacturer = data.manufacturer;
+    info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer.toString());
+  }
+
+  if (data.model) {
+    accessory.context.model = data.model;
+    info.setCharacteristic(Characteristic.Model, data.model.toString());
+  }
+
+  if (data.serial) {
+    accessory.context.serial = data.serial;
+    info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
+  }
 
   return accessory;
 }
@@ -174,7 +172,6 @@ cmdSwitchPlatform.prototype.setPowerState = function(data, state, callback) {
     exec(cmd, function(error, stdout, stderr) {
       // Error detection
       if (error && (state != data.state)) {
-        self.log(name + stderr);
         self.log(name + "Failed to turn " + (state ? "on!" : "off!"));
       } else {
         self.log(name + "Turned " + (state ? "on." : "off."));
