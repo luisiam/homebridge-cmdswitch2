@@ -74,6 +74,9 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     // Setup listeners for different switch events
     newAccessory = self.setService(newAccessory);
 
+    // Retrieve initial state
+    newAccessory = self.getInitState(newAccessory);
+
     // Register accessory in HomeKit
     self.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
   } else {
@@ -86,6 +89,9 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
 
     // Update HomeKit accessory information
     newAccessory = self.setAccessoryInfo(newAccessory, data);
+
+    // Update initial state
+    newAccessory = self.getInitState(newAccessory);
 
     // Update accessory in HomeKit
     self.api.updatePlatformAccessories([newAccessory]);
@@ -102,21 +108,6 @@ cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
     this.api.unregisterPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
     delete this.accessories[name];
   }
-}
-
-// Method to setup listeners for different events
-cmdSwitchPlatform.prototype.setService = function(accessory) {
-  var self = this;
-
-  accessory
-    .getService(Service.Switch)
-    .getCharacteristic(Characteristic.On)
-    .on('get', self.getPowerState.bind(this, accessory.context))
-    .on('set', self.setPowerState.bind(this, accessory.context));
-
-  accessory.on('identify', self.identify.bind(this, accessory.context));
-
-  return accessory;
 }
 
 // Method to setup HomeKit accessory information
@@ -137,6 +128,32 @@ cmdSwitchPlatform.prototype.setAccessoryInfo = function(accessory, data) {
     accessory.context.serial = data.serial;
     info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
   }
+
+  return accessory;
+}
+
+// Method to setup listeners for different events
+cmdSwitchPlatform.prototype.setService = function(accessory) {
+  var self = this;
+
+  accessory
+    .getService(Service.Switch)
+    .getCharacteristic(Characteristic.On)
+    .on('get', self.getPowerState.bind(this, accessory.context))
+    .on('set', self.setPowerState.bind(this, accessory.context));
+
+  accessory.on('identify', self.identify.bind(this, accessory.context));
+
+  return accessory;
+}
+
+// Method to setup listeners for different events
+cmdSwitchPlatform.prototype.getInitState = function(accessory) {
+
+  accessory
+    .getService(Service.Switch)
+    .getCharacteristic(Characteristic.On)
+    .getValue();
 
   return accessory;
 }
