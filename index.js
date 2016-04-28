@@ -68,14 +68,11 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     // Setup HomeKit switch service
     newAccessory.addService(Service.Switch, data.name);
 
-    // Setup HomeKit accessory information
-    newAccessory = self.setAccessoryInfo(newAccessory, data);
-
     // Setup listeners for different switch events
     newAccessory = self.setService(newAccessory);
 
     // Retrieve initial state
-    newAccessory = self.getInitState(newAccessory);
+    newAccessory = self.getInitState(newAccessory, data);
 
     // Register accessory in HomeKit
     self.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
@@ -87,11 +84,8 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
 
-    // Update HomeKit accessory information
-    newAccessory = self.setAccessoryInfo(newAccessory, data);
-
     // Update initial state
-    newAccessory = self.getInitState(newAccessory);
+    newAccessory = self.getInitState(newAccessory, data);
 
     // Update accessory in HomeKit
     self.api.updatePlatformAccessories([newAccessory]);
@@ -107,29 +101,8 @@ cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
     var name = accessory.context.name;
     this.api.unregisterPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
     delete this.accessories[name];
+    this.log("[" + name + "] Removed from HomeBridge.");
   }
-}
-
-// Method to setup HomeKit accessory information
-cmdSwitchPlatform.prototype.setAccessoryInfo = function(accessory, data) {
-  var info = accessory.getService(Service.AccessoryInformation);
-
-  if (data.manufacturer) {
-    accessory.context.manufacturer = data.manufacturer;
-    info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer.toString());
-  }
-
-  if (data.model) {
-    accessory.context.model = data.model;
-    info.setCharacteristic(Characteristic.Model, data.model.toString());
-  }
-
-  if (data.serial) {
-    accessory.context.serial = data.serial;
-    info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
-  }
-
-  return accessory;
 }
 
 // Method to setup listeners for different events
@@ -147,8 +120,24 @@ cmdSwitchPlatform.prototype.setService = function(accessory) {
   return accessory;
 }
 
-// Method to setup listeners for different events
-cmdSwitchPlatform.prototype.getInitState = function(accessory) {
+// Method to retrieve initial state
+cmdSwitchPlatform.prototype.getInitState = function(accessory, data) {
+  var info = accessory.getService(Service.AccessoryInformation);
+
+  if (data.manufacturer) {
+    accessory.context.manufacturer = data.manufacturer;
+    info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer.toString());
+  }
+
+  if (data.model) {
+    accessory.context.model = data.model;
+    info.setCharacteristic(Characteristic.Model, data.model.toString());
+  }
+
+  if (data.serial) {
+    accessory.context.serial = data.serial;
+    info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
+  }
 
   accessory
     .getService(Service.Switch)
