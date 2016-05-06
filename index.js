@@ -26,18 +26,27 @@ function cmdSwitchPlatform(log, config, api) {
 
 // Method to restore accessories from cache
 cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
-  accessory.reachable = true
   accessory = this.setService(accessory);
-
   var accessoryName = accessory.context.name;
   this.accessories[accessoryName] = accessory;
 }
 
 // Method to setup accesories from config.json
 cmdSwitchPlatform.prototype.didFinishLaunching = function() {
+  var allNames = [];
+
+  // Add or update accessories defined in config.json
   for (var i in this.switches) {
     var data = this.switches[i];
+    allNames.push(data.name);
     this.addAccessory(data);
+  }
+
+  // Remove extra accessories in cache
+  for (var name in this.accessories) {
+    if (allNames.indexOf(name) == -1) {
+      this.removeAccessory(this.accessories[name]);
+    }
   }
 }
 
@@ -73,6 +82,9 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
   } else {
     var newAccessory = this.accessories[data.name];
 
+    // Accessory is reachable if it's found in config.json
+    newAccessory.updateReachability(true);
+
     // Update variables in context
     newAccessory.context.on_cmd = data.on_cmd;
     newAccessory.context.off_cmd = data.off_cmd;
@@ -80,9 +92,6 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
 
     // Update initial state
     newAccessory = this.getInitState(newAccessory, data);
-
-    // Update accessory in HomeKit
-    this.api.updatePlatformAccessories([newAccessory]);
   }
 
   // Store accessory in cache
@@ -163,6 +172,7 @@ cmdSwitchPlatform.prototype.setPowerState = function(data, state, callback) {
   var name = "[" + data.name + "] ";
 
   var cmd = state ? data.on_cmd : data.off_cmd;
+  var notCmd = state ? data.off_cmd : data.on_cmd;
   var tout = null;
 
   // Execute command to set state
@@ -175,6 +185,15 @@ cmdSwitchPlatform.prototype.setPowerState = function(data, state, callback) {
         self.log(name + "Turned " + (state ? "on." : "off."));
         data.state = state;
         error = null;
+      }
+
+      // Restore switch after 1s if only one command exists
+      if (!notCmd && !data.state_cmd) {
+        setTimeout(function() {
+          self.accessories[data.name]
+            .getService(Service.Switch)
+            .setCharacteristic(Characteristic.On, !state);
+        }, 1000);
       }
 
       if (tout) {
