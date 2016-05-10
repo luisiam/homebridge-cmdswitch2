@@ -19,7 +19,6 @@ function cmdSwitchPlatform(log, config, api) {
 
   if (api) {
     this.api = api;
-
     this.api.on('didFinishLaunching', this.didFinishLaunching.bind(this));
   }
 }
@@ -72,7 +71,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.addService(Service.Switch, data.name);
 
     // Setup listeners for different switch events
-    newAccessory = this.setService(newAccessory);
+    this.setService(newAccessory);
 
     // Register accessory in HomeKit
     this.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
@@ -89,7 +88,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
   }
 
   // Retrieve initial state
-  newAccessory = this.getInitState(newAccessory, data);
+  this.getInitState(newAccessory, data);
 
   // Store accessory in cache
   this.accessories[data.name] = newAccessory;
@@ -114,8 +113,6 @@ cmdSwitchPlatform.prototype.setService = function(accessory) {
     .on('set', this.setPowerState.bind(this, accessory.context));
 
   accessory.on('identify', this.identify.bind(this, accessory.context));
-
-  return accessory;
 }
 
 // Method to retrieve initial state
@@ -141,8 +138,6 @@ cmdSwitchPlatform.prototype.getInitState = function(accessory, data) {
     .getService(Service.Switch)
     .getCharacteristic(Characteristic.On)
     .getValue();
-
-  return accessory;
 }
 
 // Method to determine current state
