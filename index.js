@@ -74,9 +74,6 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     // Setup listeners for different switch events
     newAccessory = this.setService(newAccessory);
 
-    // Retrieve initial state
-    newAccessory = this.getInitState(newAccessory, data);
-
     // Register accessory in HomeKit
     this.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
   } else {
@@ -89,10 +86,10 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.on_cmd = data.on_cmd;
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
-
-    // Update initial state
-    newAccessory = this.getInitState(newAccessory, data);
   }
+
+  // Retrieve initial state
+  newAccessory = this.getInitState(newAccessory, data);
 
   // Store accessory in cache
   this.accessories[data.name] = newAccessory;
