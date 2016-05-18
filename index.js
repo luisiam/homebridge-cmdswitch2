@@ -32,19 +32,17 @@ cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
 
 // Method to setup accesories from config.json
 cmdSwitchPlatform.prototype.didFinishLaunching = function() {
-  var allNames = [];
-
   // Add or update accessories defined in config.json
   for (var i in this.switches) {
     var data = this.switches[i];
-    allNames.push(data.name);
     this.addAccessory(data);
   }
 
   // Remove extra accessories in cache
   for (var name in this.accessories) {
-    if (allNames.indexOf(name) == -1) {
-      this.removeAccessory(this.accessories[name]);
+    var accessory = this.accessories[name];
+    if (!accessory.reachable) {
+      this.removeAccessory(accessory);
     }
   }
 }
@@ -76,6 +74,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     // Register accessory in HomeKit
     this.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
   } else {
+    // Retrieve accessory from cache
     var newAccessory = this.accessories[data.name];
 
     // Accessory is reachable if it's found in config.json
@@ -141,48 +140,48 @@ cmdSwitchPlatform.prototype.getInitState = function(accessory, data) {
 }
 
 // Method to determine current state
-cmdSwitchPlatform.prototype.getPowerState = function(data, callback) {
+cmdSwitchPlatform.prototype.getPowerState = function(thisSwitch, callback) {
   var self = this;
-  var name = "[" + data.name + "] ";
+  var name = "[" + thisSwitch.name + "] ";
 
   // Execute command to detect state
-  if (data.state_cmd) {
-    exec(data.state_cmd, function(error, stdout, stderr) {
-      data.state = stdout ? true : false;
-      self.log(name + "Current state: " + (data.state ? "On." : "Off."));
-      callback(null, data.state);
+  if (thisSwitch.state_cmd) {
+    exec(thisSwitch.state_cmd, function(error, stdout, stderr) {
+      thisSwitch.state = stdout ? true : false;
+      self.log(name + "Current state: " + (thisSwitch.state ? "On." : "Off."));
+      callback(null, thisSwitch.state);
     });
   } else {
-    self.log(name + "Current state: " + (data.state ? "On." : "Off."));
-    callback(null, data.state);
+    self.log(name + "Current state: " + (thisSwitch.state ? "On." : "Off."));
+    callback(null, thisSwitch.state);
   }
 }
 
 // Method to set state
-cmdSwitchPlatform.prototype.setPowerState = function(data, state, callback) {
+cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback) {
   var self = this;
-  var name = "[" + data.name + "] ";
+  var name = "[" + thisSwitch.name + "] ";
 
-  var cmd = state ? data.on_cmd : data.off_cmd;
-  var notCmd = state ? data.off_cmd : data.on_cmd;
+  var cmd = state ? thisSwitch.on_cmd : thisSwitch.off_cmd;
+  var notCmd = state ? thisSwitch.off_cmd : thisSwitch.on_cmd;
   var tout = null;
 
   // Execute command to set state
   if (cmd) {
     exec(cmd, function(error, stdout, stderr) {
       // Error detection
-      if (error && (state != data.state)) {
+      if (error && (state != thisSwitch.state)) {
         self.log(name + "Failed to turn " + (state ? "on!" : "off!"));
       } else {
         self.log(name + "Turned " + (state ? "on." : "off."));
-        data.state = state;
+        thisSwitch.state = state;
         error = null;
       }
 
       // Restore switch after 1s if only one command exists
-      if (!notCmd && !data.state_cmd) {
+      if (!notCmd && !thisSwitch.state_cmd) {
         setTimeout(function() {
-          self.accessories[data.name]
+          self.accessories[thisSwitch.name]
             .getService(Service.Switch)
             .setCharacteristic(Characteristic.On, !state);
         }, 1000);
