@@ -201,14 +201,14 @@ cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback
     }, 2000);
   } else {
     self.log(name + "Turned " + (state ? "on" : "off"));
-    data.state = state;
+    thisSwitch.state = state;
     callback();
   }
 }
 
 // Method to handle identify request
-cmdSwitchPlatform.prototype.identify = function(data, paired, callback) {
-  var name = "[" + data.name + "] ";
+cmdSwitchPlatform.prototype.identify = function(thisSwitch, paired, callback) {
+  var name = "[" + thisSwitch.name + "] ";
 
   this.log(name + "Identify requested!");
   callback();
