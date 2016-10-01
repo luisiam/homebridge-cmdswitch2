@@ -1,4 +1,5 @@
 var exec = require("child_process").exec;
+var chalk = require("chalk");
 var Accessory, Service, Characteristic, UUIDGen;
 
 module.exports = function(homebridge) {
@@ -49,6 +50,8 @@ cmdSwitchPlatform.prototype.didFinishLaunching = function() {
 
 // Method to add and update HomeKit accessories
 cmdSwitchPlatform.prototype.addAccessory = function(data) {
+  var self = this;
+
   if (!this.accessories[data.name]) {
     var uuid = UUIDGen.generate(data.name);
 
@@ -64,6 +67,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
     newAccessory.context.state = false;
+    newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]") + " " + msg);};
 
     // Setup HomeKit switch service
     newAccessory.addService(Service.Switch, data.name);
@@ -84,6 +88,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.on_cmd = data.on_cmd;
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
+    newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]") + " " + msg);};
   }
 
   // Retrieve initial state
@@ -97,7 +102,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
 cmdSwitchPlatform.prototype.removeAccessory = function(accessory) {
   if (accessory) {
     var name = accessory.context.name;
-    this.log("[" + name + "] Removed from HomeBridge.");
+    accessory.context.log("Removed from HomeBridge.");
     this.api.unregisterPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
     delete this.accessories[name];
   }
@@ -142,17 +147,16 @@ cmdSwitchPlatform.prototype.getInitState = function(accessory, data) {
 // Method to determine current state
 cmdSwitchPlatform.prototype.getPowerState = function(thisSwitch, callback) {
   var self = this;
-  var name = "[" + thisSwitch.name + "] ";
 
   // Execute command to detect state
   if (thisSwitch.state_cmd) {
     exec(thisSwitch.state_cmd, function(error, stdout, stderr) {
       thisSwitch.state = stdout ? true : false;
-      self.log(name + "Current state: " + (thisSwitch.state ? "On." : "Off."));
+      thisSwitch.log("Current state: " + (thisSwitch.state ? "On." : "Off."));
       callback(null, thisSwitch.state);
     });
   } else {
-    self.log(name + "Current state: " + (thisSwitch.state ? "On." : "Off."));
+    thisSwitch.log("Current state: " + (thisSwitch.state ? "On." : "Off."));
     callback(null, thisSwitch.state);
   }
 }
@@ -160,7 +164,6 @@ cmdSwitchPlatform.prototype.getPowerState = function(thisSwitch, callback) {
 // Method to set state
 cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback) {
   var self = this;
-  var name = "[" + thisSwitch.name + "] ";
 
   var cmd = state ? thisSwitch.on_cmd : thisSwitch.off_cmd;
   var notCmd = state ? thisSwitch.off_cmd : thisSwitch.on_cmd;
@@ -171,9 +174,9 @@ cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback
     exec(cmd, function(error, stdout, stderr) {
       // Error detection
       if (error && (state != thisSwitch.state)) {
-        self.log(name + "Failed to turn " + (state ? "on!" : "off!"));
+        thisSwitch.log("Failed to turn " + (state ? "on!" : "off!"));
       } else {
-        self.log(name + "Turned " + (state ? "on." : "off."));
+        thisSwitch.log("Turned " + (state ? "on." : "off."));
         thisSwitch.state = state;
         error = null;
       }
@@ -196,11 +199,11 @@ cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback
     // Allow 2s to set state but otherwise assumes success
     tout = setTimeout(function() {
       tout = null;
-      self.log(name + "Turning " + (state ? "on" : "off") + " took too long, assuming success." );
+      thisSwitch.log("Turning " + (state ? "on" : "off") + " took too long, assuming success." );
       callback();
     }, 2000);
   } else {
-    self.log(name + "Turned " + (state ? "on" : "off"));
+    thisSwitch.log("Turned " + (state ? "on" : "off"));
     thisSwitch.state = state;
     callback();
   }
@@ -208,9 +211,7 @@ cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback
 
 // Method to handle identify request
 cmdSwitchPlatform.prototype.identify = function(thisSwitch, paired, callback) {
-  var name = "[" + thisSwitch.name + "] ";
-
-  this.log(name + "Identify requested!");
+  thisSwitch.log("Identify requested!");
   callback();
 }
 
