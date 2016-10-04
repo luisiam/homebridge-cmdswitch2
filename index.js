@@ -67,7 +67,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
     newAccessory.context.state = false;
-    newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]") + " " + msg);};
+    newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]"), msg);};
 
     // Setup HomeKit switch service
     newAccessory.addService(Service.Switch, data.name);
@@ -88,7 +88,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.on_cmd = data.on_cmd;
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
-    newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]") + " " + msg);};
+    newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]"), msg);};
   }
 
   // Retrieve initial state
