@@ -151,10 +151,10 @@ cmdSwitchPlatform.prototype.getPowerState = function(thisSwitch, callback) {
   // Execute command to detect state
   if (thisSwitch.state_cmd) {
     exec(thisSwitch.state_cmd, function(error, stdout, stderr) {
-        if (stderr && stderr.length > 0) {
-          thisSwitch.log("Failed to determine state.");
-          thisSwitch.log(stderr);
-        }
+      if (stderr && stderr.length > 0) {
+        thisSwitch.log("Failed to determine state.");
+        thisSwitch.log(stderr);
+      }
       thisSwitch.state = stdout ? true : false;
       thisSwitch.log("Current state: " + (thisSwitch.state ? "On." : "Off."));
       callback(null, thisSwitch.state);
