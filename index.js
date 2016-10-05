@@ -26,8 +26,11 @@ function cmdSwitchPlatform(log, config, api) {
 
 // Method to restore accessories from cache
 cmdSwitchPlatform.prototype.configureAccessory = function(accessory) {
-  this.setService(accessory);
+  var self = this;
   var accessoryName = accessory.context.name;
+
+  accessory.context.log = function(msg) {self.log(chalk.cyan("[" + accessoryName + "]"), msg);};
+  this.setService(accessory);
   this.accessories[accessoryName] = accessory;
 }
 
@@ -66,7 +69,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.on_cmd = data.on_cmd;
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
-    newAccessory.context.state = false;
+    newAccessory.context.state = 0;
     newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]"), msg);};
 
     // Setup HomeKit switch service
@@ -88,7 +91,6 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.on_cmd = data.on_cmd;
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
-    newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]"), msg);};
   }
 
   // Retrieve initial state
@@ -155,7 +157,7 @@ cmdSwitchPlatform.prototype.getPowerState = function(thisSwitch, callback) {
         thisSwitch.log("Failed to determine state.");
         thisSwitch.log(stderr);
       }
-      thisSwitch.state = stdout ? true : false;
+      thisSwitch.state = stdout ? 1 : 0;
       thisSwitch.log("Current state: " + (thisSwitch.state ? "On." : "Off."));
       callback(null, thisSwitch.state);
     });
@@ -188,11 +190,11 @@ cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback
 
       // Restore switch after 1s if only one command exists
       if (!notCmd && !thisSwitch.state_cmd) {
-        setTimeout(function() {
-          self.accessories[thisSwitch.name]
+        setTimeout(function(thisSwitch, state) {
+          this.accessories[thisSwitch.name]
             .getService(Service.Switch)
             .setCharacteristic(Characteristic.On, !state);
-        }, 1000);
+        }.bind(self, thisSwitch, state), 1000);
       }
 
       if (tout) {
@@ -201,12 +203,12 @@ cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback
       }
     });
 
-    // Allow 2s to set state but otherwise assumes success
-    tout = setTimeout(function() {
+    // Allow 1s to set state but otherwise assumes success
+    tout = setTimeout(function(thisSwitch, state) {
       tout = null;
       thisSwitch.log("Turning " + (state ? "on" : "off") + " took too long, assuming success." );
       callback();
-    }, 2000);
+    }.bind(this, thisSwitch, state), 1000);
   } else {
     thisSwitch.log("Turned " + (state ? "on" : "off"));
     thisSwitch.state = state;
