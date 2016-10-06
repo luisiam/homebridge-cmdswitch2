@@ -69,7 +69,7 @@ cmdSwitchPlatform.prototype.addAccessory = function(data) {
     newAccessory.context.on_cmd = data.on_cmd;
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
-    newAccessory.context.state = 0;
+    newAccessory.context.state = false;
     newAccessory.context.log = function(msg) {self.log(chalk.cyan("[" + data.name + "]"), msg);};
 
     // Setup HomeKit switch service
@@ -157,7 +157,7 @@ cmdSwitchPlatform.prototype.getPowerState = function(thisSwitch, callback) {
         thisSwitch.log("Failed to determine state.");
         thisSwitch.log(stderr);
       }
-      thisSwitch.state = stdout ? 1 : 0;
+      thisSwitch.state = stdout ? true : false;
       thisSwitch.log("Current state: " + (thisSwitch.state ? "On." : "Off."));
       callback(null, thisSwitch.state);
     });
@@ -191,8 +191,7 @@ cmdSwitchPlatform.prototype.setPowerState = function(thisSwitch, state, callback
       // Restore switch after 1s if only one command exists
       if (!notCmd && !thisSwitch.state_cmd) {
         setTimeout(function(thisSwitch, state) {
-          this.accessories[thisSwitch.name]
-            .getService(Service.Switch)
+          this.accessories[thisSwitch.name].getService(Service.Switch)
             .setCharacteristic(Characteristic.On, !state);
         }.bind(self, thisSwitch, state), 1000);
       }
