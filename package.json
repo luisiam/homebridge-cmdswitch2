@@ -1,6 +1,6 @@
 {
   "name": "homebridge-cmdswitch2",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "CMD plugin for HomeBridge (API 2.0): https://github.com/nfarina/homebridge",
   "repository": {
     "type": "git",

@@ -188,10 +188,10 @@ cmdSwitchPlatform.prototype.setPowerState = function (thisSwitch, state, callbac
 
       // Restore switch after 1s if only one command exists
       if (!notCmd && !thisSwitch.state_cmd) {
-        setTimeout(function (thisSwitch, state) {
-          this.accessories[thisSwitch.name].getService(Service.Switch)
+        setTimeout(function () {
+          self.accessories[thisSwitch.name].getService(Service.Switch)
             .setCharacteristic(Characteristic.On, !state);
-        }.bind(self, thisSwitch, state), 1000);
+        }, 1000);
       }
 
       if (tout) {
@@ -205,7 +205,7 @@ cmdSwitchPlatform.prototype.setPowerState = function (thisSwitch, state, callbac
       tout = null;
       thisSwitch.log("Turning " + (state ? "on" : "off") + " took too long, assuming success." );
       callback();
-    }.bind(this, thisSwitch, state), 1000);
+    }, 1000);
   } else {
     thisSwitch.log("Turned " + (state ? "on" : "off"));
     thisSwitch.state = state;
