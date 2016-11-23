@@ -201,7 +201,7 @@ cmdSwitchPlatform.prototype.setPowerState = function (thisSwitch, state, callbac
     });
 
     // Allow 1s to set state but otherwise assumes success
-    tout = setTimeout(function (thisSwitch, state) {
+    tout = setTimeout(function () {
       tout = null;
       thisSwitch.log("Turning " + (state ? "on" : "off") + " took too long, assuming success." );
       callback();
