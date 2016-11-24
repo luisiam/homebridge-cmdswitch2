@@ -68,6 +68,7 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
     newAccessory.context.off_cmd = data.off_cmd;
     newAccessory.context.state_cmd = data.state_cmd;
     newAccessory.context.state = false;
+    if (data.off_cmd && !data.on_cmd && !data.state_cmd) newAccessory.context.state = true;
 
     // Setup HomeKit switch service
     newAccessory.addService(Service.Switch, data.name);
@@ -146,20 +147,17 @@ cmdSwitchPlatform.prototype.getPowerState = function (thisSwitch, callback) {
   var self = this;
 
   // Execute command to detect state
-  if (thisSwitch.state_cmd) {
-    exec(thisSwitch.state_cmd, function (error, stdout, stderr) {
-      if (stderr && stderr.length > 0) {
-        self.log("Failed to determine " + thisSwitch.name + " state.");
-        self.log(stderr);
-      }
-      thisSwitch.state = stdout ? true : false;
+  exec(thisSwitch.state_cmd, function (error, stdout, stderr) {
+    if (stderr) {
+      self.log("Failed to determine " + thisSwitch.name + " state.");
+      self.log(stderr);
+    } else {
+      // Determine state only if command exists
+      if (thisSwitch.state_cmd) thisSwitch.state = stdout ? true : false;
       self.log(thisSwitch.name + " is " + (thisSwitch.state ? "on." : "off."));
-      callback(null, thisSwitch.state);
-    });
-  } else {
-    this.log(thisSwitch.name + " is " + (thisSwitch.state ? "on." : "off."));
-    callback(null, thisSwitch.state);
-  }
+    }
+    callback(stderr, thisSwitch.state);
+  });
 }
 
 // Method to set state
@@ -171,43 +169,37 @@ cmdSwitchPlatform.prototype.setPowerState = function (thisSwitch, state, callbac
   var tout = null;
 
   // Execute command to set state
-  if (cmd) {
-    exec(cmd, function (error, stdout, stderr) {
-      // Error detection
-      if (error && (state !== thisSwitch.state)) {
-        self.log("Failed to turn " + (state ? "on " : "off ") + thisSwitch.name);
-        self.log(stderr);
-      } else {
-        self.log(thisSwitch.name + " is turned " + (state ? "on." : "off."));
-        thisSwitch.state = state;
-        error = null;
-      }
+  exec(cmd, function (error, stdout, stderr) {
+    // Error detection
+    if (error && (state !== thisSwitch.state)) {
+      self.log("Failed to turn " + (state ? "on " : "off ") + thisSwitch.name);
+      self.log(stderr);
+    } else {
+      if (cmd) self.log(thisSwitch.name + " is turned " + (state ? "on." : "off."));
+      thisSwitch.state = state;
+      error = null;
+    }
 
-      // Restore switch after 1s if only one command exists
-      if (!notCmd && !thisSwitch.state_cmd) {
-        setTimeout(function () {
-          self.accessories[thisSwitch.name].getService(Service.Switch)
-            .setCharacteristic(Characteristic.On, !state);
-        }, 1000);
-      }
+    // Restore switch after 1s if only one command exists
+    if (!notCmd && !thisSwitch.state_cmd) {
+      setTimeout(function () {
+        self.accessories[thisSwitch.name].getService(Service.Switch)
+          .setCharacteristic(Characteristic.On, !state);
+      }, 1000);
+    }
 
-      if (tout) {
-        clearTimeout(tout);
-        callback(error);
-      }
-    });
+    if (tout) {
+      clearTimeout(tout);
+      callback(error);
+    }
+  });
 
-    // Allow 1s to set state but otherwise assumes success
-    tout = setTimeout(function () {
-      tout = null;
-      self.log("Turning " + (state ? "on " : "off ") + thisSwitch.name + " took too long, assuming success." );
-      callback();
-    }, 1000);
-  } else {
-    this.log(thisSwitch.name + " is turned " + (state ? "on" : "off"));
-    thisSwitch.state = state;
+  // Allow 1s to set state but otherwise assumes success
+  tout = setTimeout(function () {
+    tout = null;
+    self.log("Turning " + (state ? "on " : "off ") + thisSwitch.name + " took too long, assuming success." );
     callback();
-  }
+  }, 1000);
 }
 
 // Method to handle identify request
