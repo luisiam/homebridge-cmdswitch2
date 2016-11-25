@@ -195,7 +195,7 @@ cmdSwitchPlatform.prototype.statePolling = function (name) {
   });
 
   // Setup for next polling
-  setTimeout(this.statePolling.bind(this, thisSwitch), thisSwitch.interval * 1000);
+  setTimeout(this.statePolling.bind(this, name), thisSwitch.interval * 1000);
 }
 
 // Method to determine current state
