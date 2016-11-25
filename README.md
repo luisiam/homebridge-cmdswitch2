@@ -48,6 +48,8 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
         "on_cmd": "ps4-waker",
         "off_cmd": "ps4-waker standby",
         "state_cmd": "ps4-waker search | grep -i '200Ok'",
+        "polling": true,
+        "interval": 5,
         "manufacturer": "Sony Corporation",
         "model": "CUH-1001A",
         "serial": "XXXXXXXXXXX"
@@ -65,6 +67,8 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 | \|- on_cmd       | The command to turn on your device.                   | No       |
 | \|- off_cmd      | The command to turn off your device.                  | No       |
 | \|- state_cmd    | The command to detect an ON state of your device.     | No       |
+| \|- polling      | State polling (Default false).                        | No       |
+| \|- interval     | Polling interval in `s` (Default 1s).                 | No       |
 | \|- manufacturer | The manufacturer of your device.                      | No       |
 | \|- model        | The model of your device.                             | No       |
 | \|- serial       | The serial number of your device.                     | No       |
