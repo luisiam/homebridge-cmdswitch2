@@ -51,16 +51,16 @@ cmdSwitchPlatform.prototype.didFinishLaunching = function () {
 
 // Method to add and update HomeKit accessories
 cmdSwitchPlatform.prototype.addAccessory = function (data) {
-  var self = this;
-
   // Confirm variable type
   if (data.polling === true || (typeof(data.polling) === "string" && data.polling.toUpperCase() === "TRUE")) {
     data.polling = true;
   } else {
     data.polling = false;
   }
-
   data.interval = parseInt(data.interval) || 1;
+  if (data.manufacturer) data.manufacturer = data.manufacturer.toString();
+  if (data.model) data.model = data.model.toString();
+  if (data.serial) data.serial = data.serial.toString();
 
   if (!this.accessories[data.name]) {
     var uuid = UUIDGen.generate(data.name);
@@ -73,11 +73,6 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
 
     // Store and initialize variables into context
     newAccessory.context.name = data.name;
-    newAccessory.context.on_cmd = data.on_cmd;
-    newAccessory.context.off_cmd = data.off_cmd;
-    newAccessory.context.state_cmd = data.state_cmd;
-    newAccessory.context.polling = data.polling;
-    newAccessory.context.interval = data.interval;
     newAccessory.context.state = false;
     if (data.off_cmd && !data.on_cmd && !data.state_cmd) newAccessory.context.state = true;
 
@@ -95,17 +90,20 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
 
     // Accessory is reachable if it's found in config.json
     newAccessory.updateReachability(true);
-
-    // Update variables in context
-    newAccessory.context.on_cmd = data.on_cmd;
-    newAccessory.context.off_cmd = data.off_cmd;
-    newAccessory.context.state_cmd = data.state_cmd;
-    newAccessory.context.polling = data.polling;
-    newAccessory.context.interval = data.interval;
   }
 
+  // Update variables in context
+  newAccessory.context.on_cmd = data.on_cmd;
+  newAccessory.context.off_cmd = data.off_cmd;
+  newAccessory.context.state_cmd = data.state_cmd;
+  newAccessory.context.polling = data.polling;
+  newAccessory.context.interval = data.interval;
+  newAccessory.context.manufacturer = data.manufacturer;
+  newAccessory.context.model = data.model;
+  newAccessory.context.serial = data.serial;
+
   // Retrieve initial state
-  this.getInitState(newAccessory, data);
+  this.getInitState(newAccessory);
 
   // Store accessory in cache
   this.accessories[data.name] = newAccessory;
@@ -135,24 +133,18 @@ cmdSwitchPlatform.prototype.setService = function (accessory) {
 }
 
 // Method to retrieve initial state
-cmdSwitchPlatform.prototype.getInitState = function (accessory, data) {
-  var info = accessory.getService(Service.AccessoryInformation);
+cmdSwitchPlatform.prototype.getInitState = function (accessory) {
+  var manufacturer = accessory.context.manufacturer || "Default-Manufacturer";
+  var model = accessory.context.model || "Default-Model";
+  var serial = accessory.context.serial || "Default-SerialNumber";
 
-  if (data.manufacturer) {
-    accessory.context.manufacturer = data.manufacturer;
-    info.setCharacteristic(Characteristic.Manufacturer, data.manufacturer.toString());
-  }
+  // Update HomeKit accessory information
+  accessory.getService(Service.AccessoryInformation)
+    .setCharacteristic(Characteristic.Manufacturer, manufacturer)
+    .setCharacteristic(Characteristic.Model, model)
+    .setCharacteristic(Characteristic.SerialNumber, serial);
 
-  if (data.model) {
-    accessory.context.model = data.model;
-    info.setCharacteristic(Characteristic.Model, data.model.toString());
-  }
-
-  if (data.serial) {
-    accessory.context.serial = data.serial;
-    info.setCharacteristic(Characteristic.SerialNumber, data.serial.toString());
-  }
-
+  // Retrieve initial state if polling is disabled
   if (!data.polling) {
     accessory.getService(Service.Switch)
       .getCharacteristic(Characteristic.On)
@@ -180,7 +172,6 @@ cmdSwitchPlatform.prototype.getState = function (thisSwitch, callback) {
 
 // Method to determine current state
 cmdSwitchPlatform.prototype.statePolling = function (name) {
-  var self = this;
   var accessory = this.accessories[name];
   var thisSwitch = accessory.context;
 
@@ -320,18 +311,19 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
           context.step = 3;
           callback(respDict);
         } else {
-          var self = this;
-          var names = Object.keys(this.accessories).map(function (k) {return self.accessories[k].context.name});
+          var names = Object.keys(this.accessories);
 
           if (names.length > 0) {
             // Select existing accessory for modification or removal
             if (selection === 1) {
               var title = "Witch switch do you want to modify?";
               context.operation = 1;
+              context.step = 3;
             } else {
               var title = "Witch switch do you want to remove?";
-              context.operation = 2;
+              context.step = 5;
             }
+
             var respDict = {
               "type": "Interface",
               "interface": "list",
@@ -340,8 +332,8 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
             };
 
             context.list = names;
-            context.step = 3;
           } else {
+            // Error if not switch is configured
             var respDict = {
               "type": "Interface",
               "interface": "instruction",
@@ -356,98 +348,83 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
         }
         break;
       case 3:
-        if (context.operation === 2) {
-          // Remove selected accessory from HomeKit
+        if (context.operation === 0) {
+          var data = request.response.inputs;
+        } else if (context.operation === 1) {
           var selection = context.list[request.response.selections[0]];
-          var accessory = this.accessories[selection];
+          var data = this.accessories[selection].context;
+        }
+        
+        if (data.name) {
+          // Add/Modify info of selected accessory
+          var respDict = {
+            "type": "Interface",
+            "interface": "input",
+            "title": data.name,
+            "items": [{
+              "id": "on_cmd",
+              "title": "CMD to Turn On",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "wakeonlan XX:XX:XX:XX:XX:XX"
+            }, {
+              "id": "off_cmd",
+              "title": "CMD to Turn Off",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "net rpc shutdown -I XXX.XXX.XXX.XXX -U user%password"
+            }, {
+              "id": "state_cmd",
+              "title": "CMD to Check ON State",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "ping -c 2 -W 1 XXX.XXX.XXX.XXX | grep -i '2 received'"
+            }, {
+              "id": "polling",
+              "title": "Enable Polling (true/false)",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "false"
+            }, {
+              "id": "interval",
+              "title": "Polling Interval",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "1"
+            }, {
+              "id": "manufacturer",
+              "title": "Manufacturer",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "Default-Manufacturer"
+            }, {
+              "id": "model",
+              "title": "Model",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "Default-Model"
+            }, {
+              "id": "serial",
+              "title": "Serial",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "Default-SerialNumber"
+            }]
+          };
 
-          this.removeAccessory(accessory);
+          context.name = data.name;
+          context.step = 4;
+        } else {
+          // Error if required info is missing
           var respDict = {
             "type": "Interface",
             "interface": "instruction",
-            "title": "Success",
-            "detail": "The switch is now removed.",
+            "title": "Error",
+            "detail": "Name of the switch is missing.",
             "showNextButton": true
           };
-
-          context.step = 5;
-        } else {
-          if (context.operation === 0) {
-            var data = request.response.inputs;
-          } else if (context.operation === 1) {
-            var selection = context.list[request.response.selections[0]];
-            var data = this.accessories[selection].context;
-          }
-
-          if (data.name) {
-            // Add/Modify info of selected accessory
-            var respDict = {
-              "type": "Interface",
-              "interface": "input",
-              "title": data.name,
-              "items": [{
-                "id": "on_cmd",
-                "title": "CMD to Turn On",
-                "placeholder": context.operation ? "Leave blank if unchanged" : "wakeonlan XX:XX:XX:XX:XX:XX"
-              }, {
-                "id": "off_cmd",
-                "title": "CMD to Turn Off",
-                "placeholder": context.operation ? "Leave blank if unchanged" : "net rpc shutdown -I XXX.XXX.XXX.XXX -U user%password"
-              }, {
-                "id": "state_cmd",
-                "title": "CMD to Check ON State",
-                "placeholder": context.operation ? "Leave blank if unchanged" : "ping -c 2 -W 1 XXX.XXX.XXX.XXX | grep -i '2 received'"
-              }, {
-                "id": "polling",
-                "title": "Enable Polling (true/false)",
-                "placeholder": context.operation ? "Leave blank if unchanged" : "false"
-              }, {
-                "id": "interval",
-                "title": "Polling Interval",
-                "placeholder": context.operation ? "Leave blank if unchanged" : "1"
-              }, {
-                "id": "manufacturer",
-                "title": "Manufacturer",
-                "placeholder": context.operation ? "Leave blank if unchanged" : "Default-Manufacturer"
-              }, {
-                "id": "model",
-                "title": "Model",
-                "placeholder": context.operation ? "Leave blank if unchanged" : "Default-Model"
-              }, {
-                "id": "serial",
-                "title": "Serial",
-                "placeholder": context.operation ? "Leave blank if unchanged" : "Default-SerialNumber"
-              }]
-            };
-
-            delete context.list;
-            delete context.operation;
-            context.name = data.name;
-            context.step = 4;
-          } else {
-            // Error if required info is missing
-            var respDict = {
-              "type": "Interface",
-              "interface": "instruction",
-              "title": "Error",
-              "detail": "Name of the switch is missing.",
-              "showNextButton": true
-            };
-
-            context.step = 1;
-          }
+        
+          context.step = 1;
         }
+
+        delete context.list;
+        delete context.operation;
         callback(respDict);
         break;
       case 4:
         var userInputs = request.response.inputs;
         var newSwitch = {};
 
-        // Setup input for addAccessory
+        // Clone context if switch exists
         if (this.accessories[context.name]) {
           newSwitch = JSON.parse(JSON.stringify(this.accessories[context.name].context));
         }
 
+        // Setup input for addAccessory
         newSwitch.name = context.name;
         newSwitch.on_cmd = userInputs.on_cmd || newSwitch.on_cmd;
         newSwitch.off_cmd = userInputs.off_cmd || newSwitch.off_cmd;
@@ -468,14 +445,34 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
           "showNextButton": true
         };
 
-        context.step = 5;
+        context.step = 6;
         callback(respDict);
         break;
       case 5:
+        // Remove selected accessory from HomeKit
+        var selection = context.list[request.response.selections[0]];
+        var accessory = this.accessories[selection];
+
+        this.removeAccessory(accessory);
+        var respDict = {
+          "type": "Interface",
+          "interface": "instruction",
+          "title": "Success",
+          "detail": "The switch is now removed.",
+          "showNextButton": true
+        };
+
+        delete context.list;
+        context.step = 6;
+        callback(respDict);
+        break;
+      case 6:
         // Update config.json accordingly
         var self = this;
         delete context.step;
         var newConfig = this.config;
+
+        // Create config for each switch
         var newSwitches = Object.keys(this.accessories).map(function (k) {
           var accessory = self.accessories[k];
           var data = {
