@@ -25,7 +25,6 @@ function cmdSwitchPlatform(log, config, api) {
 
 // Method to restore accessories from cache
 cmdSwitchPlatform.prototype.configureAccessory = function (accessory) {
-  var self = this;
   var accessoryName = accessory.context.name;
 
   this.setService(accessory);
