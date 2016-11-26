@@ -144,7 +144,7 @@ cmdSwitchPlatform.prototype.getInitState = function (accessory) {
     .setCharacteristic(Characteristic.SerialNumber, serial);
 
   // Retrieve initial state if polling is disabled
-  if (!data.polling) {
+  if (!accessory.context.polling) {
     accessory.getService(Service.Switch)
       .getCharacteristic(Characteristic.On)
       .getValue();

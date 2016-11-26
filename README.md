@@ -63,13 +63,13 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 | platform         | Must always be `cmdSwitch2`.                          | Yes      |
 | name             | For logging purposes.                                 | No       |
 | switches         | Array of switch config (multiple switches supported). | Yes      |
-| \|- name\*       | The name of your device.                              | Yes      |
-| \|- on_cmd       | The command to turn on your device.                   | No       |
-| \|- off_cmd      | The command to turn off your device.                  | No       |
-| \|- state_cmd    | The command to detect an ON state of your device.     | No       |
+| \|- name\*       | Name of your device.                                  | Yes      |
+| \|- on_cmd       | Command to turn on your device.                       | No       |
+| \|- off_cmd      | Command to turn off your device.                      | No       |
+| \|- state_cmd    | Command to detect an ON state of your device.         | No       |
 | \|- polling      | State polling (Default false).                        | No       |
 | \|- interval     | Polling interval in `s` (Default 1s).                 | No       |
-| \|- manufacturer | The manufacturer of your device.                      | No       |
-| \|- model        | The model of your device.                             | No       |
-| \|- serial       | The serial number of your device.                     | No       |
+| \|- manufacturer | Manufacturer of your device.                          | No       |
+| \|- model        | Model of your device.                                 | No       |
+| \|- serial       | Serial number of your device.                         | No       |
 \*Changing the switch `name` in `config.json` will create a new switch instead of renaming the existing one in HomeKit. It's strongly recommended that you rename the switch using a HomeKit app only.
