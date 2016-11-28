@@ -16,6 +16,7 @@ function cmdSwitchPlatform(log, config, api) {
   this.switches = this.config.switches || [];
 
   this.accessories = {};
+  this.polling = {};
 
   if (api) {
     this.api = api;
@@ -56,7 +57,7 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
   } else {
     data.polling = false;
   }
-  data.interval = parseInt(data.interval) || 1;
+  data.interval = parseInt(data.interval, 10) || 1;
   if (data.manufacturer) data.manufacturer = data.manufacturer.toString();
   if (data.model) data.model = data.model.toString();
   if (data.serial) data.serial = data.serial.toString();
@@ -174,6 +175,9 @@ cmdSwitchPlatform.prototype.statePolling = function (name) {
   var accessory = this.accessories[name];
   var thisSwitch = accessory.context;
 
+  // Clear polling
+  clearTimeout(this.polling[name]);
+
   this.getState(thisSwitch, function (error, state) {
     // Update state if there's no error
     if (!error && state !== thisSwitch.state) {
@@ -185,7 +189,7 @@ cmdSwitchPlatform.prototype.statePolling = function (name) {
   });
 
   // Setup for next polling
-  setTimeout(this.statePolling.bind(this, name), thisSwitch.interval * 1000);
+  this.polling[name] = setTimeout(this.statePolling.bind(this, name), thisSwitch.interval * 1000);
 }
 
 // Method to determine current state
