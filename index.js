@@ -38,20 +38,13 @@ cmdSwitchPlatform.prototype.didFinishLaunching = function () {
   // Remove extra accessories in cache
   for (var name in this.accessories) {
     var accessory = this.accessories[name];
-    if (!accessory.reachable) {
-      this.removeAccessory(accessory);
-    }
+    if (!accessory.reachable) this.removeAccessory(accessory);
   }
 }
 
 // Method to add and update HomeKit accessories
 cmdSwitchPlatform.prototype.addAccessory = function (data) {
-  // Confirm variable type
-  if (data.polling !== true) data.polling = false;
-  data.interval = parseInt(data.interval, 10) || 1;
-  if (data.manufacturer) data.manufacturer = data.manufacturer.toString();
-  if (data.model) data.model = data.model.toString();
-  if (data.serial) data.serial = data.serial.toString();
+  this.log("Initializing platform accessory '" + data.name + "'...");
 
   // Retrieve accessory from cache
   var accessory = this.accessories[data.name];
@@ -74,8 +67,12 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
     this.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
   }
 
-  // Accessory is reachable if it's found in config.json
-  accessory.updateReachability(true);
+  // Confirm variable type
+  data.polling = data.polling === true;
+  data.interval = parseInt(data.interval, 10) || 1;
+  if (data.manufacturer) data.manufacturer = data.manufacturer.toString();
+  if (data.model) data.model = data.model.toString();
+  if (data.serial) data.serial = data.serial.toString();
 
   // Store and initialize variables into context
   var cache = accessory.context;
@@ -141,6 +138,9 @@ cmdSwitchPlatform.prototype.getInitState = function (accessory) {
       .getCharacteristic(Characteristic.On)
       .getValue();
   }
+
+  // Configured accessory is reachable
+  accessory.updateReachability(true);
 }
 
 // Method to determine current state
