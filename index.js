@@ -26,19 +26,14 @@ function cmdSwitchPlatform(log, config, api) {
 
 // Method to restore accessories from cache
 cmdSwitchPlatform.prototype.configureAccessory = function (accessory) {
-  var accessoryName = accessory.context.name;
-
   this.setService(accessory);
-  this.accessories[accessoryName] = accessory;
+  this.accessories[accessory.context.name] = accessory;
 }
 
 // Method to setup accesories from config.json
 cmdSwitchPlatform.prototype.didFinishLaunching = function () {
   // Add or update accessories defined in config.json
-  for (var i in this.switches) {
-    var data = this.switches[i];
-    this.addAccessory(data);
-  }
+  for (var i in this.switches) this.addAccessory(this.switches[i]);
 
   // Remove extra accessories in cache
   for (var name in this.accessories) {
@@ -52,61 +47,57 @@ cmdSwitchPlatform.prototype.didFinishLaunching = function () {
 // Method to add and update HomeKit accessories
 cmdSwitchPlatform.prototype.addAccessory = function (data) {
   // Confirm variable type
-  if (data.polling === true || (typeof(data.polling) === "string" && data.polling.toUpperCase() === "TRUE")) {
-    data.polling = true;
-  } else {
-    data.polling = false;
-  }
+  if (data.polling !== true) data.polling = false;
   data.interval = parseInt(data.interval, 10) || 1;
   if (data.manufacturer) data.manufacturer = data.manufacturer.toString();
   if (data.model) data.model = data.model.toString();
   if (data.serial) data.serial = data.serial.toString();
 
-  if (!this.accessories[data.name]) {
-    var uuid = UUIDGen.generate(data.name);
+  // Retrieve accessory from cache
+  var accessory = this.accessories[data.name];
 
+  if (!accessory) {
     // Setup accessory as SWITCH (8) category.
-    var newAccessory = new Accessory(data.name, uuid, 8);
-
-    // New accessory is always reachable
-    newAccessory.reachable = true;
-
-    // Store and initialize variables into context
-    newAccessory.context.name = data.name;
-    newAccessory.context.state = false;
-    if (data.off_cmd && !data.on_cmd && !data.state_cmd) newAccessory.context.state = true;
+    var uuid = UUIDGen.generate(data.name);
+    accessory = new Accessory(data.name, uuid, 8);
 
     // Setup HomeKit switch service
-    newAccessory.addService(Service.Switch, data.name);
+    accessory.addService(Service.Switch, data.name);
+
+    // New accessory is always reachable
+    accessory.reachable = true;
 
     // Setup listeners for different switch events
-    this.setService(newAccessory);
+    this.setService(accessory);
 
-    // Register accessory in HomeKit
-    this.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [newAccessory]);
-  } else {
-    // Retrieve accessory from cache
-    var newAccessory = this.accessories[data.name];
-
-    // Accessory is reachable if it's found in config.json
-    newAccessory.updateReachability(true);
+    // Register new accessory in HomeKit
+    this.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
   }
 
-  // Update variables in context
-  newAccessory.context.on_cmd = data.on_cmd;
-  newAccessory.context.off_cmd = data.off_cmd;
-  newAccessory.context.state_cmd = data.state_cmd;
-  newAccessory.context.polling = data.polling;
-  newAccessory.context.interval = data.interval;
-  newAccessory.context.manufacturer = data.manufacturer;
-  newAccessory.context.model = data.model;
-  newAccessory.context.serial = data.serial;
+  // Accessory is reachable if it's found in config.json
+  accessory.updateReachability(true);
+
+  // Store and initialize variables into context
+  var cache = accessory.context;
+  cache.name = data.name;
+  cache.on_cmd = data.on_cmd;
+  cache.off_cmd = data.off_cmd;
+  cache.state_cmd = data.state_cmd;
+  cache.polling = data.polling;
+  cache.interval = data.interval;
+  cache.manufacturer = data.manufacturer;
+  cache.model = data.model;
+  cache.serial = data.serial;
+  if (cache.state === undefined) {
+    cache.state = false;
+    if (data.off_cmd && !data.on_cmd) cache.state = true;
+  }
 
   // Retrieve initial state
-  this.getInitState(newAccessory);
+  this.getInitState(accessory);
 
   // Store accessory in cache
-  this.accessories[data.name] = newAccessory;
+  this.accessories[data.name] = accessory;
 
   // Configure state polling
   if (data.polling && data.state_cmd) this.statePolling(data.name);
@@ -432,7 +423,11 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
         newSwitch.on_cmd = userInputs.on_cmd || newSwitch.on_cmd;
         newSwitch.off_cmd = userInputs.off_cmd || newSwitch.off_cmd;
         newSwitch.state_cmd = userInputs.state_cmd || newSwitch.state_cmd;
-        newSwitch.polling = userInputs.polling || newSwitch.polling;
+        if (userInputs.polling.toUpperCase() === "TRUE") {
+          newSwitch.polling = true;
+        } else if (userInputs.polling.toUpperCase() === "FALSE") {
+          newSwitch.polling = false;
+        }
         newSwitch.interval = userInputs.interval || newSwitch.interval;
         newSwitch.manufacturer = userInputs.manufacturer;
         newSwitch.model = userInputs.model;
