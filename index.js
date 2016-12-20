@@ -65,6 +65,9 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
 
     // Register new accessory in HomeKit
     this.api.registerPlatformAccessories("homebridge-cmdswitch2", "cmdSwitch2", [accessory]);
+
+    // Store accessory in cache
+    this.accessories[data.name] = accessory;
   }
 
   // Confirm variable type
@@ -92,9 +95,6 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
 
   // Retrieve initial state
   this.getInitState(accessory);
-
-  // Store accessory in cache
-  this.accessories[data.name] = accessory;
 
   // Configure state polling
   if (data.polling && data.state_cmd) this.statePolling(data.name);
@@ -149,7 +149,7 @@ cmdSwitchPlatform.prototype.getState = function (thisSwitch, callback) {
 
   // Execute command to detect state
   exec(thisSwitch.state_cmd, function (error, stdout, stderr) {
-    var state = stdout ? true : false;
+    var state = error ? true : false;
 
     // Error detection
     if (stderr) {
