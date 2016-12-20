@@ -13,8 +13,8 @@ This plugin allows you to run Command Line Interface (CLI) commands via HomeKit.
 1. `on_cmd`: This is the command issued when the switch is turned ON.
 2. `off_cmd`: This is the command issued when the switch is turned OFF.
 3. `state_cmd`: This is the command issued when HomeBridge checks the state of the switch.
-  1. If there is no error, HomeBridge is notified that the switch is ON.
-  2. If there is an error, HomeBridge is notified that the switch is OFF.
+  1. If `standard output` is not empty, HomeBridge is notified that the switch is ON.
+  2. If `standard output` is empty, HomeBridge is notified that the switch is OFF.
 
 ### Things to know about this plugin
 This plugin can only run CLI commands the same as you typing them yourself. In order to test if your `on_cmd`, `off_cmd`, or `state_cmd` are valid commands you need to run them from your CLI. Please keep in mind you will want to run these commands from the same user that runs (or owns) the HomeBridge service if different than your root user.
