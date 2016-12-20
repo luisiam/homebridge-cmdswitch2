@@ -47,7 +47,7 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
         "name" : "Playstation 4",
         "on_cmd": "ps4-waker",
         "off_cmd": "ps4-waker standby",
-        "state_cmd": "ps4-waker search | grep -i '200Ok'",
+        "state_cmd": "ps4-waker search | grep -i '200 Ok'",
         "polling": true,
         "interval": 5,
         "manufacturer": "Sony Corporation",
