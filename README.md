@@ -72,4 +72,5 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 | \|- manufacturer | Manufacturer of your device.                          | No       |
 | \|- model        | Model of your device.                                 | No       |
 | \|- serial       | Serial number of your device.                         | No       |
+
 \*Changing the switch `name` in `config.json` will create a new switch instead of renaming the existing one in HomeKit. It's strongly recommended that you rename the switch using a HomeKit app only.
