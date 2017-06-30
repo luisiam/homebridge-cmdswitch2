@@ -50,6 +50,7 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
         "state_cmd": "ps4-waker search | grep -i '200 Ok'",
         "polling": true,
         "interval": 5,
+        "timeout": 2000,
         "manufacturer": "Sony Corporation",
         "model": "CUH-1001A",
         "serial": "XXXXXXXXXXX"
@@ -58,19 +59,22 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 ```
 
 
-| Fields           | Description                                           | Required |
-|------------------|-------------------------------------------------------|----------|
-| platform         | Must always be `cmdSwitch2`.                          | Yes      |
-| name             | For logging purposes.                                 | No       |
-| switches         | Array of switch config (multiple switches supported). | Yes      |
-| \|- name\*       | Name of your device.                                  | Yes      |
-| \|- on_cmd       | Command to turn on your device.                       | No       |
-| \|- off_cmd      | Command to turn off your device.                      | No       |
-| \|- state_cmd    | Command to detect an ON state of your device.         | No       |
-| \|- polling      | State polling (Default false).                        | No       |
-| \|- interval     | Polling interval in `s` (Default 1s).                 | No       |
-| \|- manufacturer | Manufacturer of your device.                          | No       |
-| \|- model        | Model of your device.                                 | No       |
-| \|- serial       | Serial number of your device.                         | No       |
+| Fields             | Description                                           | Required |
+|--------------------|-------------------------------------------------------|----------|
+| platform           | Must always be `cmdSwitch2`.                          | Yes      |
+| name               | For logging purposes.                                 | No       |
+| switches           | Array of switch config (multiple switches supported). | Yes      |
+| \|- name\*         | Name of your device.                                  | Yes      |
+| \|- on_cmd         | Command to turn on your device.                       | No       |
+| \|- off_cmd        | Command to turn off your device.                      | No       |
+| \|- state_cmd      | Command to detect an ON state of your device.         | No       |
+| \|- polling        | State polling (Default false).                        | No       |
+| \|- interval       | Polling interval in `s` (Default 1s).                 | No       |
+| \|- timeout\*\*    | Commands execution timeout in `ms` (Default 1000ms).  | No       |
+| \|- manufacturer   | Manufacturer of your device.                          | No       |
+| \|- model          | Model of your device.                                 | No       |
+| \|- serial         | Serial number of your device.                         | No       |
 
 \*Changing the switch `name` in `config.json` will create a new switch instead of renaming the existing one in HomeKit. It's strongly recommended that you rename the switch using a HomeKit app only.
+
+\*\*Command execution is assumed 'Successful' if timeout occures.
