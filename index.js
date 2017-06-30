@@ -73,7 +73,7 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
   // Confirm variable type
   data.polling = data.polling === true;
   data.interval = parseInt(data.interval, 10) || 1;
-  data.cmd_timeout = parseInt(data.cmd_timeout, 10) || 1000; 
+  data.timeout = parseInt(data.timeout, 10) || 1; 
   if (data.manufacturer) data.manufacturer = data.manufacturer.toString();
   if (data.model) data.model = data.model.toString();
   if (data.serial) data.serial = data.serial.toString();
@@ -86,7 +86,7 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
   cache.state_cmd = data.state_cmd;
   cache.polling = data.polling;
   cache.interval = data.interval;
-  cache.cmd_timeout = data.cmd_timeout;
+  cache.timeout = data.timeout;
   cache.manufacturer = data.manufacturer;
   cache.model = data.model;
   cache.serial = data.serial;
@@ -241,9 +241,9 @@ cmdSwitchPlatform.prototype.setPowerState = function (thisSwitch, state, callbac
   // Allow 1s to set state but otherwise assumes success
   tout = setTimeout(function () {
     tout = null;
-    self.log("Turning " + (state ? "on " : "off ") + thisSwitch.name + " took too long [" + thisSwitch.cmd_timeout + " ms], assuming success." );
+    self.log("Turning " + (state ? "on " : "off ") + thisSwitch.name + " took too long [" + thisSwitch.timeout + "s], assuming success." );
     callback();
-  }, thisSwitch.cmd_timeout);
+  }, thisSwitch.timeout * 1000);
 }
 
 // Method to handle identify request
@@ -375,13 +375,13 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
               "placeholder": context.operation ? "Leave blank if unchanged" : "false"
             }, {
               "id": "interval",
-              "title": "Polling Interval",
+              "title": "Polling Interval (s)",
               "placeholder": context.operation ? "Leave blank if unchanged" : "1"
             },
             {
-              "id": "cmd_timeout",
-              "title": "On/Off command execution timeout (ms)",
-              "placeholder": context.operation ? "Leave blank if unchanged" : "1000"
+              "id": "timeout",
+              "title": "On/Off command execution timeout (s)",
+              "placeholder": context.operation ? "Leave blank if unchanged" : "1"
             }, {
               "id": "manufacturer",
               "title": "Manufacturer",
@@ -436,7 +436,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
           newSwitch.polling = false;
         }
         newSwitch.interval = userInputs.interval || newSwitch.interval;
-        newSwitch.cmd_timeout = userInputs.cmd_timeout || newSwitch.cmd_timeout;
+        newSwitch.timeout = userInputs.timeout || newSwitch.timeout;
         newSwitch.manufacturer = userInputs.manufacturer;
         newSwitch.model = userInputs.model;
         newSwitch.serial = userInputs.serial;
@@ -488,7 +488,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
             'state_cmd': accessory.context.state_cmd,
             'polling': accessory.context.polling,
             'interval': accessory.context.interval,
-            'cmd_timeout': accessory.context.cmd_timeout,
+            'timeout': accessory.context.timeout,
             'manufacturer': accessory.context.manufacturer,
             'model': accessory.context.model,
             'serial': accessory.context.serial
