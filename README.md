@@ -50,7 +50,7 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
         "state_cmd": "ps4-waker search | grep -i '200 Ok'",
         "polling": true,
         "interval": 5,
-        "cmd_timeout": 2000,
+        "timeout": 2000,
         "manufacturer": "Sony Corporation",
         "model": "CUH-1001A",
         "serial": "XXXXXXXXXXX"
@@ -70,7 +70,7 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 | \|- state_cmd      | Command to detect an ON state of your device.         | No       |
 | \|- polling        | State polling (Default false).                        | No       |
 | \|- interval       | Polling interval in `s` (Default 1s).                 | No       |
-| \|- cmd_timeout\*\*| Commands execution timeout in `ms` (Default 1000ms).  | No       |
+| \|- timeout\*\*    | Commands execution timeout in `ms` (Default 1000ms).  | No       |
 | \|- manufacturer   | Manufacturer of your device.                          | No       |
 | \|- model          | Model of your device.                                 | No       |
 | \|- serial         | Serial number of your device.                         | No       |
