@@ -70,7 +70,7 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 | \|- state_cmd      | Command to detect an ON state of your device.         | No       |
 | \|- polling        | State polling (Default false).                        | No       |
 | \|- interval       | Polling interval in `s` (Default 1s).                 | No       |
-| \|- timeout\*\*    | Commands execution timeout in `ms` (Default 1000ms).  | No       |
+| \|- timeout\*\*    | Commands execution timeout in `s` (Default 1s).       | No       |
 | \|- manufacturer   | Manufacturer of your device.                          | No       |
 | \|- model          | Model of your device.                                 | No       |
 | \|- serial         | Serial number of your device.                         | No       |
