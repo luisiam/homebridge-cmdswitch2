@@ -149,6 +149,12 @@ cmdSwitchPlatform.prototype.getInitState = function (accessory) {
 cmdSwitchPlatform.prototype.getState = function (thisSwitch, callback) {
   var self = this;
 
+  // Return cached state if no state_cmd provided
+  if (thisSwitch.state_cmd === undefined) {
+    callback(null, thisSwitch.state);
+    return;
+  }
+
   // Execute command to detect state
   exec(thisSwitch.state_cmd, function (error, stdout, stderr) {
     var state = error ? false : true;
