@@ -318,11 +318,11 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
           if (names.length > 0) {
             // Select existing accessory for modification or removal
             if (selection === 1) {
-              var title = "Witch switch do you want to modify?";
+              var title = "Which switch do you want to modify?";
               context.operation = 1;
               context.step = 3;
             } else {
-              var title = "Witch switch do you want to remove?";
+              var title = "Which switch do you want to remove?";
               context.step = 5;
             }
 
