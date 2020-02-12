@@ -18,7 +18,6 @@
           "name":{
             "title": "Name",
             "type": "string",
-            "default": "Default Camera",
             "required": true
           },
           "on_cmd":{
@@ -39,7 +38,6 @@
           "polling":{
             "title": "Polling?",
             "type": "boolean",
-            "default": false,
             "required": false
           },
           "interval":{
