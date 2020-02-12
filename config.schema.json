@@ -11,7 +11,7 @@
     },
     "switches": {
       "type": "array",
-      "items": {
+      "items": [{
         "title": "Switch Config",
         "type": "object",
         "properties": {
@@ -66,7 +66,7 @@
             "required": false
           }
         }
-      }
+      }]
     }
   },
   "form": [
