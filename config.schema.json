@@ -1,0 +1,92 @@
+{
+  "pluginAlias": "cmdSwitch2",
+  "pluginType": "platform",
+  "footerDisplay": "For help please see the [README](https://github.com/luisiam/homebridge-cmdswitch2).",
+  "schema": {
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "default": "homebridge-cmdswitch2",
+      "required": false
+    },
+    "switches": {
+      "type": "array",
+      "items": {
+        "title": "Switch Config",
+        "type": "object",
+        "properties": {
+          "name":{
+            "title": "Name",
+            "type": "string",
+            "default": "Default Camera",
+            "required": true
+          },
+          "on_cmd":{
+            "title": "On Command",
+            "type": "string",
+            "required": false
+          },
+          "off_cmd":{
+            "title": "Off Command",
+            "type": "string",
+            "required": false
+          },
+          "state_cmd":{
+            "title": "State Command",
+            "type": "string",
+            "required": false
+          },
+          "polling":{
+            "title": "Polling?",
+            "type": "boolean",
+            "default": false,
+            "required": false
+          },
+          "interval":{
+            "title": "Poll interval (s)",
+            "type": "number",
+            "required": false
+          },
+          "timeout":{
+            "title": "Poll timout (s)",
+            "type": "number",
+            "required": false
+          },
+          "manufacturer":{
+            "title": "Manufacturer",
+            "type": "string",
+            "required": false
+          },
+          "model":{
+            "title": "Model",
+            "type": "string",
+            "required": false
+          },
+          "serial":{
+            "title": "Serial",
+            "type": "string",
+            "required": false
+          }
+        }
+      }
+    }
+  },
+  "form": [
+    "name",
+    {
+      "key":"switches",
+      "items":[
+        "switches[].name",
+        "switches[].on_cmd",
+        "switches[].off_cmd",
+        "switches[].state_cmd",
+        "switches[].polling",
+        "switches[].interval",
+        "switches[].timeout",
+        "switches[].manufacturer",
+        "switches[].model",
+        "switches[].serial"
+      ]
+    }
+  ]
+}
