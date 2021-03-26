@@ -38,6 +38,7 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 "platforms": [{
     "platform": "cmdSwitch2",
     "name": "CMD Switch",
+    "synchronous": true,
     "switches": [{
         "name" : "HTPC",
         "on_cmd": "wakeonlan XX:XX:XX:XX:XX:XX",
@@ -63,6 +64,7 @@ This step is not required. HomeBridge with API 2.0 can handle configurations in 
 |--------------------|-------------------------------------------------------|----------|
 | platform           | Must always be `cmdSwitch2`.                          | Yes      |
 | name               | For logging purposes.                                 | No       |
+| synchronous        | No parallell execution.                               | No       |
 | switches           | Array of switch config (multiple switches supported). | Yes      |
 | \|- name\*         | Name of your device.                                  | Yes      |
 | \|- on_cmd         | Command to turn on your device.                       | No       |
