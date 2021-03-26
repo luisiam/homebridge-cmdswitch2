@@ -1,5 +1,8 @@
-var exec = require("child_process").exec;
+const { exec } = require("child_process");
+const ExecQueue = require('./ExecQueue');
 var Accessory, Service, Characteristic, UUIDGen;
+
+const execQueue = new ExecQueue();
 
 module.exports = function (homebridge) {
   Accessory = homebridge.platformAccessory;
@@ -14,7 +17,13 @@ function cmdSwitchPlatform(log, config, api) {
   this.log = log;
   this.config = config || {"platform": "cmdSwitch2"};
   this.switches = this.config.switches || [];
-
+  const { synchronous = false } = this.config;
+  if (synchronous) {
+    this.exec = function() {execQueue.add.apply(execQueue, arguments)}
+  } else {
+    this.exec = exec;
+  }
+  
   this.accessories = {};
   this.polling = {};
 
@@ -155,8 +164,8 @@ cmdSwitchPlatform.prototype.getState = function (thisSwitch, callback) {
     return;
   }
 
-  // Execute command to detect state
-  exec(thisSwitch.state_cmd, function (error, stdout, stderr) {
+  // execAute command to detect state
+  this.exec(thisSwitch.state_cmd, function (error, stdout, stderr) {
     var state = error ? false : true;
 
     // Error detection
@@ -219,7 +228,7 @@ cmdSwitchPlatform.prototype.setPowerState = function (thisSwitch, state, callbac
   var tout = null;
 
   // Execute command to set state
-  exec(cmd, function (error, stdout, stderr) {
+  this.exec(cmd, function (error, stdout, stderr) {
     // Error detection
     if (error && (state !== thisSwitch.state)) {
       self.log("Failed to turn " + (state ? "on " : "off ") + thisSwitch.name);
