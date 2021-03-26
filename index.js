@@ -164,7 +164,7 @@ cmdSwitchPlatform.prototype.getState = function (thisSwitch, callback) {
     return;
   }
 
-  // execAute command to detect state
+  // execute command to detect state
   this.exec(thisSwitch.state_cmd, function (error, stdout, stderr) {
     var state = error ? false : true;
 
