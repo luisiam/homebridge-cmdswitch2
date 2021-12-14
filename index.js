@@ -23,7 +23,7 @@ function cmdSwitchPlatform(log, config, api) {
   } else {
     this.exec = exec;
   }
-  
+
   this.accessories = {};
   this.polling = {};
 
@@ -58,13 +58,30 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
   // Retrieve accessory from cache
   var accessory = this.accessories[data.name];
 
-  if (!accessory) {
-    // Setup accessory as SWITCH (8) category.
-    var uuid = UUIDGen.generate(data.name);
-    accessory = new Accessory(data.name, uuid, 8);
+  if (accessory) {
+    const isLightbulb = !!accessory.getService(Service.Lightbulb);
+    const isUpdated = !!data.dim_cmd !== isLightbulb;
+    if (isUpdated) {
+      this.log(`${accessory.context.name} has changed.`);
+      this.removeAccessory(accessory);
+      accessory = undefined;
+    }
+  }
 
-    // Setup HomeKit switch service
-    accessory.addService(Service.Switch, data.name);
+  if (!accessory) {
+    var uuid = UUIDGen.generate(data.name);
+    const { dim_cmd } = data;
+    if (dim_cmd) {
+      // Setup accessory as LIGHTBULB (5) category.
+      accessory = new Accessory(data.name, uuid, 5);
+      // Setup HomeKit switch service
+      accessory.addService(Service.Lightbulb, data.name);
+    } else {
+      // Setup accessory as SWITCH (8) category.
+      accessory = new Accessory(data.name, uuid, 8);
+      // Setup HomeKit switch service
+      accessory.addService(Service.Switch, data.name);
+    }
 
     // New accessory is always reachable
     accessory.reachable = true;
@@ -82,7 +99,7 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
   // Confirm variable type
   data.polling = data.polling === true;
   data.interval = parseInt(data.interval, 10) || 1;
-  data.timeout = parseInt(data.timeout, 10) || 1; 
+  data.timeout = parseInt(data.timeout, 10) || 1;
   if (data.manufacturer) data.manufacturer = data.manufacturer.toString();
   if (data.model) data.model = data.model.toString();
   if (data.serial) data.serial = data.serial.toString();
@@ -92,6 +109,7 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
   cache.name = data.name;
   cache.on_cmd = data.on_cmd;
   cache.off_cmd = data.off_cmd;
+  cache.dim_cmd = data.dim_cmd;
   cache.state_cmd = data.state_cmd;
   cache.polling = data.polling;
   cache.interval = data.interval;
@@ -99,6 +117,7 @@ cmdSwitchPlatform.prototype.addAccessory = function (data) {
   cache.manufacturer = data.manufacturer;
   cache.model = data.model;
   cache.serial = data.serial;
+  cache.brightness = data.brightness || 0;
   if (cache.state === undefined) {
     cache.state = false;
     if (data.off_cmd && !data.on_cmd) cache.state = true;
@@ -123,10 +142,23 @@ cmdSwitchPlatform.prototype.removeAccessory = function (accessory) {
 
 // Method to setup listeners for different events
 cmdSwitchPlatform.prototype.setService = function (accessory) {
-  accessory.getService(Service.Switch)
-    .getCharacteristic(Characteristic.On)
-    .on('get', this.getPowerState.bind(this, accessory.context))
-    .on('set', this.setPowerState.bind(this, accessory.context));
+  const isLightbulb = !!accessory.getService(Service.Lightbulb);
+  if (isLightbulb) {
+    accessory.getService(Service.Lightbulb)
+        .getCharacteristic(Characteristic.On)
+        .on('get', this.getPowerState.bind(this, accessory.context))
+        .on('set', this.setBrightness.bind(this, accessory.context));
+
+    accessory.getService(Service.Lightbulb)
+        .getCharacteristic(Characteristic.Brightness)
+        .on('get', this.getBrightness.bind(this, accessory.context))
+        .on('set', this.setBrightness.bind(this, accessory.context));
+  } else {
+    accessory.getService(Service.Switch)
+        .getCharacteristic(Characteristic.On)
+        .on('get', this.getPowerState.bind(this, accessory.context))
+        .on('set', this.setPowerState.bind(this, accessory.context));
+  }
 
   accessory.on('identify', this.identify.bind(this, accessory.context));
 }
@@ -137,6 +169,8 @@ cmdSwitchPlatform.prototype.getInitState = function (accessory) {
   var model = accessory.context.model || "Default-Model";
   var serial = accessory.context.serial || "Default-SerialNumber";
 
+  const isLightbulb = !!accessory.getService(Service.Lightbulb);
+
   // Update HomeKit accessory information
   accessory.getService(Service.AccessoryInformation)
     .setCharacteristic(Characteristic.Manufacturer, manufacturer)
@@ -145,9 +179,15 @@ cmdSwitchPlatform.prototype.getInitState = function (accessory) {
 
   // Retrieve initial state if polling is disabled
   if (!accessory.context.polling) {
-    accessory.getService(Service.Switch)
-      .getCharacteristic(Characteristic.On)
-      .getValue();
+    if (isLightbulb) {
+      accessory.getService(Service.Lightbulb)
+          .getCharacteristic(Characteristic.Brightness)
+          .getValue();
+    } else {
+      accessory.getService(Service.Switch)
+          .getCharacteristic(Characteristic.On)
+          .getValue();
+    }
   }
 
   // Configured accessory is reachable
@@ -217,6 +257,45 @@ cmdSwitchPlatform.prototype.getPowerState = function (thisSwitch, callback) {
       callback(error, thisSwitch.state);
     });
   }
+}
+
+// Method to determine current state
+cmdSwitchPlatform.prototype.getBrightness = function (thisSwitch, callback) {
+    this.exec(thisSwitch.state_cmd, function (error, stdout, stderr) {
+      const matches = stdout.toString().match(/\d+/g) || [];
+      if (matches.length > 0) {
+        const [dimValue] = matches;
+        const value = parseInt(dimValue, 10);
+        thisSwitch.brightness = value;
+        callback(stderr, value);
+      } else {
+        callback(stderr, thisSwitch.brightness);
+      }
+    });
+}
+
+cmdSwitchPlatform.prototype.setBrightness = function (thisSwitch, brightness, callback) {
+  const self = this;
+  const didTurnOn = typeof brightness === 'boolean' && !!brightness && !thisSwitch.state;
+  const didTurnOff = typeof brightness === 'boolean' && !brightness;
+  let newBrightness;
+  if (didTurnOff) {
+    this.setPowerState(thisSwitch, false, callback);
+    return;
+  } else if (didTurnOn) {
+    thisSwitch.state = true;
+    newBrightness = thisSwitch.brightness;
+  } else if (typeof brightness !== 'boolean'){
+    newBrightness = brightness;
+  } else {
+    callback();
+    return;
+  }
+  thisSwitch.brightness = newBrightness;
+  this.exec(thisSwitch.dim_cmd, {env: {HB_BRIGHTNESS: thisSwitch.brightness}}, function (error, stdout, stderr) {
+    self.log(`${thisSwitch.name} dimmed to ${thisSwitch.brightness}`);
+    callback();
+  });
 }
 
 // Method to set state
@@ -365,7 +444,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
           var selection = context.list[request.response.selections[0]];
           var data = this.accessories[selection].context;
         }
-        
+
         if (data.name) {
           // Add/Modify info of selected accessory
           var respDict = {
@@ -423,7 +502,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
             "detail": "Name of the switch is missing.",
             "showNextButton": true
           };
-        
+
           context.step = 1;
         }
 
@@ -445,6 +524,7 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
         newSwitch.on_cmd = userInputs.on_cmd || newSwitch.on_cmd;
         newSwitch.off_cmd = userInputs.off_cmd || newSwitch.off_cmd;
         newSwitch.state_cmd = userInputs.state_cmd || newSwitch.state_cmd;
+        newSwitch.dim_cmd = userInputs.dim_cmd || newSwitch.dim_cmd;
         if (userInputs.polling.toUpperCase() === "TRUE") {
           newSwitch.polling = true;
         } else if (userInputs.polling.toUpperCase() === "FALSE") {
@@ -501,6 +581,8 @@ cmdSwitchPlatform.prototype.configurationRequestHandler = function (context, req
             'on_cmd': accessory.context.on_cmd,
             'off_cmd': accessory.context.off_cmd,
             'state_cmd': accessory.context.state_cmd,
+            'dim_cmd': accessory.context.dim_cmd,
+            'brightness': accessory.context.brightness,
             'polling': accessory.context.polling,
             'interval': accessory.context.interval,
             'timeout': accessory.context.timeout,
