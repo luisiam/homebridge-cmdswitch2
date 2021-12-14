@@ -294,7 +294,7 @@ cmdSwitchPlatform.prototype.setBrightness = function (thisSwitch, brightness, ca
   thisSwitch.brightness = newBrightness;
   this.exec(thisSwitch.dim_cmd, {env: {HB_BRIGHTNESS: thisSwitch.brightness}}, function (error, stdout, stderr) {
     self.log(`${thisSwitch.name} dimmed to ${thisSwitch.brightness}`);
-    callback();
+    callback(error);
   });
 }
 
