@@ -286,7 +286,6 @@ cmdSwitchPlatform.prototype.setBrightness = function (thisSwitch, brightness, ca
     thisSwitch.state = true;
     newBrightness = thisSwitch.brightness;
   } else if (typeof brightness !== 'boolean'){
-    thisSwitch.state = true;
     newBrightness = brightness;
   } else {
     callback();
